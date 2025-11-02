@@ -6,7 +6,7 @@ const scrape = async() => {
     const url = "https://apiv4.dineoncampus.com/locations/686d10a81fea2d6aaeb9f733/menu?date=2025-10-26&period=686d10a81fea2d6aaeb9f745";
     const response = await page.goto(url);
     const data = await response.json()
-    console.log(data.period.categories[1].items[1])
+    console.log(data.period.categories[0].items[0].filters)
         // const data = await page.evaluate(() => {
         //     return JSON.parse(document.body.innerText);
         // });
