@@ -2,10 +2,8 @@ name: Fetch Daily Menu
 
 on:
   schedule:
-    # Run at 10:30 AM EST (3:30 PM UTC / 15:30 UTC)
-    # Note: EST is UTC-5, so 10:30 AM EST = 3:30 PM UTC
     - cron: '30 15 * * *'
-  workflow_dispatch: # Allows you to manually trigger it from GitHub
+  workflow_dispatch:
 
 jobs:
   fetch-menu:
@@ -18,7 +16,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: '20'  # Changed from 18 to 20
       
       - name: Install dependencies
         run: |
@@ -31,4 +29,11 @@ jobs:
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
           cd backend-folder
-          node fetchMenuPuppeteer.js
+          node fetchMenuPuppeteer.js 2>&1 | tee output.log
+          
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: error-logs
+          path: backend-folder/output.log
