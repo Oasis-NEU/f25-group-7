@@ -1,0 +1,34 @@
+name: Fetch Daily Menu
+
+on:
+  schedule:
+    # Run at 10:30 AM EST (3:30 PM UTC / 15:30 UTC)
+    # Note: EST is UTC-5, so 10:30 AM EST = 3:30 PM UTC
+    - cron: '30 15 * * *'
+  workflow_dispatch: # Allows you to manually trigger it from GitHub
+
+jobs:
+  fetch-menu:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: |
+          cd backend-folder
+          npm install
+      
+      - name: Run menu scraper
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          cd backend-folder
+          node fetchMenuPuppeteer.js
