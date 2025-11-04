@@ -12,7 +12,13 @@ async function fetchMenuData() {
 
     const browser = await puppeteer.launch({
         headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
+        args: [
+            '--no-sandbox', 
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--disable-gpu'
+        ]
     });
 
     const page = await browser.newPage();
@@ -28,25 +34,28 @@ async function fetchMenuData() {
 
     // Check if the response is OK
     if (!response.ok()) {
+        console.error(`HTTP Error: ${response.status()} ${response.statusText()}`);
         throw new Error(`HTTP ${response.status()}: ${response.statusText()}`);
     }
 
     // Check content type
     const contentType = response.headers()['content-type'];
     console.log('Content-Type:', contentType);
-    
-    if (!contentType || !contentType.includes('application/json')) {
-        const bodyText = await page.evaluate(() => document.body.innerText);
-        console.error('Unexpected content type. Body:', bodyText.substring(0, 500));
-        throw new Error('Response is not JSON');
-    }
 
-    // Extract the JSON data from the page
-    const data = await page.evaluate(() => {
-        const text = document.body.innerText;
-        console.log('Raw response:', text.substring(0, 200)); // Log first 200 chars
-        return JSON.parse(text);
-    });
+    // Get the body text to see what we're actually receiving
+    const bodyText = await page.evaluate(() => document.body.innerText);
+    console.log('First 500 characters of response:');
+    console.log(bodyText.substring(0, 500));
+
+    let data;
+    try {
+        data = JSON.parse(bodyText);
+    } catch (parseError) {
+        console.error('JSON Parse Error:', parseError.message);
+        console.error('Full response body:', bodyText);
+        await browser.close();
+        throw new Error('Failed to parse JSON response');
+    }
 
     await browser.close();
 
