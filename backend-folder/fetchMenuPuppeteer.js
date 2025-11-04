@@ -26,35 +26,31 @@ async function fetchMenuData() {
     // Set a real user agent
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36');
 
+    console.log('Navigating to API...');
+
     // Navigate to the API endpoint
     const response = await page.goto('https://apiv4.dineoncampus.com/sites/todays_menu?siteId=5751fd2b90975b60e048929a', {
         waitUntil: 'networkidle0',
         timeout: 30000
     });
 
-    // Check if the response is OK
-    if (!response.ok()) {
-        console.error(`HTTP Error: ${response.status()} ${response.statusText()}`);
-        throw new Error(`HTTP ${response.status()}: ${response.statusText()}`);
-    }
-
-    // Check content type
-    const contentType = response.headers()['content-type'];
-    console.log('Content-Type:', contentType);
+    console.log('Response status:', response.status());
+    console.log('Content-Type:', response.headers()['content-type']);
 
     // Get the body text to see what we're actually receiving
     const bodyText = await page.evaluate(() => document.body.innerText);
     console.log('First 500 characters of response:');
     console.log(bodyText.substring(0, 500));
+    console.log('---END OF PREVIEW---');
 
     let data;
     try {
         data = JSON.parse(bodyText);
     } catch (parseError) {
         console.error('JSON Parse Error:', parseError.message);
-        console.error('Full response body:', bodyText);
+        console.error('Full response (first 1000 chars):', bodyText.substring(0, 1000));
         await browser.close();
-        throw new Error('Failed to parse JSON response');
+        throw new Error('Failed to parse JSON response from API');
     }
 
     await browser.close();
