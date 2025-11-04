@@ -32,23 +32,19 @@ async function fetchMenuData() {
 
     await browser.close();
 
-    console.log(`✅ Found ${data.locations.length} locations`);
+    console.log(`Found ${data.locations.length} locations`);
     return data;
 }
 
 async function storeMenuData(data) {
-    // OLD (UTC time):
-    // const today = new Date().toISOString().split('T')[0];
-
-    // NEW (EST time):
+    // Get EST date
     const today = new Date().toLocaleDateString('en-CA', {
         timeZone: 'America/New_York'
     });
 
-    console.log(`📅 Storing data for date: ${today}`);
+    console.log(`Storing data for date: ${today}`);
 
-    // ... rest of the code stays the same
-
+    // Check if menu already exists for today
     const { data: existingItems } = await supabase
         .from('menu_items')
         .select('id')
@@ -65,51 +61,68 @@ async function storeMenuData(data) {
     for (const location of data.locations) {
         console.log(`\n Processing: ${location.name}`);
 
-        const { error: locError } = await supabase
+        // Insert location with date (creates new entry each day)
+        const { data: insertedLocation, error: locError } = await supabase
             .from('locations')
-            .upsert({
-                id: location.id,
+            .insert({
+                original_id: location.id,
                 name: location.name,
                 type: location.type,
                 building_name: location.building_name,
-                sort_order: location.sort_order
-            });
+                sort_order: location.sort_order,
+                date: today
+            })
+            .select()
+            .single();
 
         if (locError) {
             console.error(`Error storing location: ${locError.message}`);
             continue;
         }
 
+        const locationDbId = insertedLocation.id;
+
         for (const period of location.periods) {
-            const { error: periodError } = await supabase
+            // Insert period with date (creates new entry each day)
+            const { data: insertedPeriod, error: periodError } = await supabase
                 .from('periods')
-                .upsert({
-                    id: period.id,
-                    location_id: location.id,
-                    name: period.name
-                });
+                .insert({
+                    original_id: period.id,
+                    location_id: locationDbId,
+                    name: period.name,
+                    date: today
+                })
+                .select()
+                .single();
 
             if (periodError) {
                 console.error(`Error storing period: ${periodError.message}`);
                 continue;
             }
 
+            const periodDbId = insertedPeriod.id;
+
             for (const station of period.stations) {
-                const { error: stationError } = await supabase
+                const { data: insertedStation, error: stationError } = await supabase
                     .from('stations')
-                    .upsert({
-                        id: station.id,
-                        period_id: period.id,
-                        name: station.name
-                    });
+                    .insert({
+                        original_id: station.id,
+                        period_id: periodDbId,
+                        name: station.name,
+                        date: today
+                    })
+                    .select()
+                    .single();
 
                 if (stationError) {
                     console.error(`Error storing station: ${stationError.message}`);
                     continue;
                 }
 
+                const stationDbId = insertedStation.id;
+
                 const items = station.items.map(item => ({
-                    station_id: station.id,
+                    station_id: stationDbId,
                     name: item.name,
                     calories: item.calories,
                     portion: item.portion,
@@ -125,14 +138,14 @@ async function storeMenuData(data) {
                         console.error(`Error storing items: ${itemsError.message}`);
                     } else {
                         totalItems += items.length;
-                        console.log(`Added ${items.length} items from ${station.name}`);
+                        console.log(`✅ Added ${items.length} items from ${station.name}`);
                     }
                 }
             }
         }
     }
 
-    console.log(`\nSuccessfully stored ${totalItems} menu items!`);
+    console.log(`Successfully stored ${totalItems} menu items!`);
 }
 
 async function main() {
@@ -141,9 +154,9 @@ async function main() {
     try {
         const menuData = await fetchMenuData();
         await storeMenuData(menuData);
-        console.log('\nAll done!');
+        console.log('All done!');
     } catch (error) {
-        console.error('\nError:', error.message);
+        console.error('Error:', error.message);
         process.exit(1);
     }
 }
