@@ -21,18 +21,36 @@ async function fetchMenuData() {
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36');
 
     // Navigate to the API endpoint
-    await page.goto('https://apiv4.dineoncampus.com/sites/todays_menu?siteId=5751fd2b90975b60e048929a', {
-        waitUntil: 'networkidle0'
+    const response = await page.goto('https://apiv4.dineoncampus.com/sites/todays_menu?siteId=5751fd2b90975b60e048929a', {
+        waitUntil: 'networkidle0',
+        timeout: 30000
     });
+
+    // Check if the response is OK
+    if (!response.ok()) {
+        throw new Error(`HTTP ${response.status()}: ${response.statusText()}`);
+    }
+
+    // Check content type
+    const contentType = response.headers()['content-type'];
+    console.log('Content-Type:', contentType);
+    
+    if (!contentType || !contentType.includes('application/json')) {
+        const bodyText = await page.evaluate(() => document.body.innerText);
+        console.error('Unexpected content type. Body:', bodyText.substring(0, 500));
+        throw new Error('Response is not JSON');
+    }
 
     // Extract the JSON data from the page
     const data = await page.evaluate(() => {
-        return JSON.parse(document.body.innerText);
+        const text = document.body.innerText;
+        console.log('Raw response:', text.substring(0, 200)); // Log first 200 chars
+        return JSON.parse(text);
     });
 
     await browser.close();
 
-    console.log(`Found ${data.locations.length} locations`);
+    console.log(`✅ Found ${data.locations.length} locations`);
     return data;
 }
 
@@ -42,7 +60,7 @@ async function storeMenuData(data) {
         timeZone: 'America/New_York'
     });
 
-    console.log(`Storing data for date: ${today}`);
+    console.log(`📅 Storing data for date: ${today}`);
 
     // Check if menu already exists for today
     const { data: existingItems } = await supabase
@@ -103,6 +121,7 @@ async function storeMenuData(data) {
             const periodDbId = insertedPeriod.id;
 
             for (const station of period.stations) {
+                // Insert station with date (creates new entry each day)
                 const { data: insertedStation, error: stationError } = await supabase
                     .from('stations')
                     .insert({
@@ -145,7 +164,7 @@ async function storeMenuData(data) {
         }
     }
 
-    console.log(`Successfully stored ${totalItems} menu items!`);
+    console.log(`\n🎉 Successfully stored ${totalItems} menu items!`);
 }
 
 async function main() {
@@ -154,9 +173,9 @@ async function main() {
     try {
         const menuData = await fetchMenuData();
         await storeMenuData(menuData);
-        console.log('All done!');
+        console.log('\n✅ All done!');
     } catch (error) {
-        console.error('Error:', error.message);
+        console.error('\n❌ Error:', error.message);
         process.exit(1);
     }
 }
