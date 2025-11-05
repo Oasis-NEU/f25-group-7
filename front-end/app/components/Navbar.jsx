@@ -26,6 +26,9 @@ function Navbar() {
                <Link href="#"><span className="font-bold uppercase text-sm hover:text-[#bd311e] transition duration-300"></span>
                60 Belvidere
                </Link>
+               <Link href="#"><span className="font-bold uppercase text-sm hover:text-[#bd311e] transition duration-300"></span>
+               Logout
+               </Link>
           </div>
      </nav>
 }
