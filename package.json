@@ -3,7 +3,10 @@
   "private": true,
   "scripts": {
     "deploy-front": "vercel --cwd front-end --prod --confirm --name northeastern-dinein-ratings",
-    "build": "cd front-end && npm run build"
+    "build": "cd front-end && next build",
+    "dev": "cd front-end && next dev --turbopack",
+    "start": "cd front-end && next start",
+    "lint": "cd front-end && next lint"
   },
   "dependencies": {
     "framer-motion": "^12.23.24",
