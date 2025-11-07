@@ -1,4 +1,10 @@
 {
+  "name": "f25-group-7",
+  "private": true,
+  "scripts": {
+    "deploy-front": "vercel --cwd front-end --prod --confirm --name northeastern-dinein-ratings",
+    "build": "cd front-end && npm run build"
+  },
   "dependencies": {
     "framer-motion": "^12.23.24",
     "lucide-react": "^0.552.0"
