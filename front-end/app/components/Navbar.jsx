@@ -3,7 +3,7 @@ function Navbar() {
      return <nav className="flex items-center justify-center px-10 py-4 lg:justify-between">
           <div className="cursor-pointer">
                <img 
-               src="Dining_Monogram_K.png"
+               src="/Dining_Monogram_K.png"
                alt="logo"
                width={180}
                height={180}
