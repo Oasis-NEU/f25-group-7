@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+:root {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+  background-image: linear-gradient(to bottom left, rgb(255, 84, 84) 0% , #ffffff 100%);
+}
+
+sumbit-button {
+  background-image: linear-gradient(
+    to right, 
+    #ffffff 0%,
+    #767676 51%,
+    #580505 100%,
+  );
+  margin: 10px;
+  width: 11rem;
+  padding: 10px 45px;
+  text-align: center;
+  text-transform: uppercase;
+  transition: all 0.5s ease;
+  background-size: 200% auto;
+  border-radius: 100px;
+}
+submit-button:hover{
+  background-position: right center;
+  transform: scale(1.05);
+}
+bx-shadow{
+  box-shadow: rgba(255, 255, 255, 0.3) 0px 19px 38px,
+  rgba(255,255,255,0.22) 0px 15px 12px;
+}
+input-field{
+  width:100%;
+  padding: 0.75rem 1rem;
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  background: transparent;
+  border: 5 px solid rgba(0, 0, 0, 0.2);
+  border-radius: 9999px;
+  transition: all 0.3s ease;
+}
+input-field:focus{
+  border-color:antiquewhite;
+  box-shadow: 0 0 8px antiquewhite;
+
+}
+
+
