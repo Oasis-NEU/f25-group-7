@@ -1,4 +1,6 @@
 require('dotenv').config();
+console.log('SUPABASE_URL:', process.env.SUPABASE_URL); // Add this debug line
+console.log('SUPABASE_KEY:', process.env.SUPABASE_KEY ? 'Found' : 'Missing'); // Add this debug line
 const { createClient } = require('@supabase/supabase-js');
 const puppeteer = require('puppeteer');
 
@@ -12,13 +14,7 @@ async function fetchMenuData() {
 
     const browser = await puppeteer.launch({
         headless: true,
-        args: [
-            '--no-sandbox', 
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--disable-gpu'
-        ]
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
 
     const page = await browser.newPage();
@@ -26,36 +22,19 @@ async function fetchMenuData() {
     // Set a real user agent
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36');
 
-    console.log('Navigating to API...');
-
     // Navigate to the API endpoint
-    const response = await page.goto('https://apiv4.dineoncampus.com/sites/todays_menu?siteId=5751fd2b90975b60e048929a', {
-        waitUntil: 'networkidle0',
-        timeout: 30000
+    await page.goto('https://apiv4.dineoncampus.com/sites/todays_menu?siteId=5751fd2b90975b60e048929a', {
+        waitUntil: 'networkidle0'
     });
 
-    console.log('Response status:', response.status());
-    console.log('Content-Type:', response.headers()['content-type']);
-
-    // Get the body text to see what we're actually receiving
-    const bodyText = await page.evaluate(() => document.body.innerText);
-    console.log('First 500 characters of response:');
-    console.log(bodyText.substring(0, 500));
-    console.log('---END OF PREVIEW---');
-
-    let data;
-    try {
-        data = JSON.parse(bodyText);
-    } catch (parseError) {
-        console.error('JSON Parse Error:', parseError.message);
-        console.error('Full response (first 1000 chars):', bodyText.substring(0, 1000));
-        await browser.close();
-        throw new Error('Failed to parse JSON response from API');
-    }
+    // Extract the JSON data from the page
+    const data = await page.evaluate(() => {
+        return JSON.parse(document.body.innerText);
+    });
 
     await browser.close();
 
-    console.log(`✅ Found ${data.locations.length} locations`);
+    console.log(`Found ${data.locations.length} locations`);
     return data;
 }
 
@@ -65,7 +44,7 @@ async function storeMenuData(data) {
         timeZone: 'America/New_York'
     });
 
-    console.log(`📅 Storing data for date: ${today}`);
+    console.log(`Storing data for date: ${today}`);
 
     // Check if menu already exists for today
     const { data: existingItems } = await supabase
@@ -126,7 +105,6 @@ async function storeMenuData(data) {
             const periodDbId = insertedPeriod.id;
 
             for (const station of period.stations) {
-                // Insert station with date (creates new entry each day)
                 const { data: insertedStation, error: stationError } = await supabase
                     .from('stations')
                     .insert({
@@ -169,7 +147,7 @@ async function storeMenuData(data) {
         }
     }
 
-    console.log(`\n🎉 Successfully stored ${totalItems} menu items!`);
+    console.log(`Successfully stored ${totalItems} menu items!`);
 }
 
 async function main() {
@@ -178,9 +156,9 @@ async function main() {
     try {
         const menuData = await fetchMenuData();
         await storeMenuData(menuData);
-        console.log('\n✅ All done!');
+        console.log('All done!');
     } catch (error) {
-        console.error('\n❌ Error:', error.message);
+        console.error('Error:', error.message);
         process.exit(1);
     }
 }
