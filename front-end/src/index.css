@@ -1,2 +1,41 @@
 @import 'tailwindcss';
-@theme
+@theme {
+    --color-border: hsl(var(--border));
+    --color-text: hsl(var(--text));
+    --color-background: hsl(var(--background));
+}
+
+
+/* change the colour inside this root to set the different colours for our website*/
+
+@layer base {
+     :root {
+        --background: 210 40% 98%;
+        --color-text: 250 47% 60%;
+        --border: 217 33% 20%;
+    }
+    html {
+        scroll-behavior: smooth;
+    }
+    body {
+        background-color: var(--color-background);
+        color: var(--color-text);
+        transition: colors 0.3s;
+    }
+}
+
+@layer components {
+    .container {
+        margin-inline: auto;
+        padding-inline: 2rem;
+    }
+    .card-hover {
+        transform: scale(1.02);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+    .gradient-border {
+        background: linear-gradient(to right, hsl(var(--card)), hsl(var(--card)));
+        background-clip: padding-box;
+        border: 1px solid transparent;
+    }
+}
