@@ -14,9 +14,20 @@ function Login() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
-      <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
-        <h2 className="text-3xl font-bold mb-6">Login</h2>
+    <div className="flex items-center justify-center min-h-screen bg-cover bg-center bg-no-repeat"
+    style={{
+      background: ' linear-gradient(360deg, #FFE6E6 -90%, #FF4B4B 40%, #1A1A1A 150%)'
+    }}
+    >
+      <div className=' absolute top-10 flex flex-row items-center mb-8 text-center animate-pulse'>
+        <img
+        src="/logo__5_-removebg-preview.png"
+        alt='NU Rate-ON Logo'
+        className='w-50 h-50 mb-4 drop-shadow-md'/> 
+        <h1 text="WELCOME TO NU RATE-ON!" blurAmount={8} animationDuration={0.8}/>
+      </div>
+      <div className="bg-white/20 backdrop-blur-md rounded-xl shadow-lg p-8 w-full max-w-md">
+        <h2 className="text-3xl place-self-center-safe font-bold mb-6">Login</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
@@ -49,20 +60,25 @@ function Login() {
             />
           </div>
 
-          {/* Updated button */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2 px-4 rounded-lg font-semibold border border-gray-300 bg-white text-gray-800 hover:bg-blue-600 hover:text-white transition-all duration-200 disabled:opacity-50"
+            className="w-full py-2 px-4 rounded-lg font-semibold border border-gray-300 bg-white text-gray-800 hover:bg-black hover:text-white transition-all duration-200 disabled:opacity-50"
           >
             {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
 
-        <p className="mt-4 text-center text-sm">
+        <p className="mt-4 text-center text-white text-sm">
           Don't have an account?{' '}
-          <Link to="/signup" className="font-semibold text-blue-600 hover:underline">
+          <Link to="/signup" className="font-semibold text-yellow-300 hover:underline">
             Sign up
+          </Link>
+        </p>
+        <p className="mt-4 text-center text-white text-sm">
+          Forgot Password?{' '}
+          <Link to="/forgot" className="font-semibold text-yellow-300 hover:underline">
+            Reset Password
           </Link>
         </p>
       </div>
