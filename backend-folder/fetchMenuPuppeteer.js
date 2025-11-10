@@ -1,6 +1,6 @@
 require('dotenv').config();
-console.log('SUPABASE_URL:', process.env.SUPABASE_URL); // Add this debug line
-console.log('SUPABASE_KEY:', process.env.SUPABASE_KEY ? 'Found' : 'Missing'); // Add this debug line
+console.log('SUPABASE_URL:', process.env.SUPABASE_URL);
+console.log('SUPABASE_KEY:', process.env.SUPABASE_KEY ? 'Found' : 'Missing');
 const { createClient } = require('@supabase/supabase-js');
 const puppeteer = require('puppeteer');
 
@@ -18,28 +18,47 @@ async function fetchMenuData() {
     });
 
     const page = await browser.newPage();
-
-    // Set a real user agent
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36');
 
-    // Navigate to the API endpoint
+    // Fetch main menu data
     await page.goto('https://apiv4.dineoncampus.com/sites/todays_menu?siteId=5751fd2b90975b60e048929a', {
         waitUntil: 'networkidle0'
     });
 
-    // Extract the JSON data from the page
     const data = await page.evaluate(() => {
         return JSON.parse(document.body.innerText);
     });
 
-    await browser.close();
-
     console.log(`Found ${data.locations.length} locations`);
+    
+    await browser.close();
     return data;
 }
 
+async function fetchDetailedMenuData(locationId, date, periodId) {
+    console.log(`  Fetching detailed data for period ${periodId}...`);
+    
+    const browser = await puppeteer.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+
+    const page = await browser.newPage();
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36');
+
+    const url = `https://apiv4.dineoncampus.com/locations/${locationId}/menu?date=${date}&period=${periodId}`;
+    
+    await page.goto(url, { waitUntil: 'networkidle0' });
+    
+    const detailedData = await page.evaluate(() => {
+        return JSON.parse(document.body.innerText);
+    });
+
+    await browser.close();
+    return detailedData;
+}
+
 async function storeMenuData(data) {
-    // Get EST date
     const today = new Date().toLocaleDateString('en-CA', {
         timeZone: 'America/New_York'
     });
@@ -61,9 +80,9 @@ async function storeMenuData(data) {
     let totalItems = 0;
 
     for (const location of data.locations) {
-        console.log(`\n Processing: ${location.name}`);
+        console.log(`\nProcessing: ${location.name}`);
 
-        // Insert location with date (creates new entry each day)
+        // Insert location
         const { data: insertedLocation, error: locError } = await supabase
             .from('locations')
             .insert({
@@ -85,7 +104,7 @@ async function storeMenuData(data) {
         const locationDbId = insertedLocation.id;
 
         for (const period of location.periods) {
-            // Insert period with date (creates new entry each day)
+            // Insert period
             const { data: insertedPeriod, error: periodError } = await supabase
                 .from('periods')
                 .insert({
@@ -103,6 +122,25 @@ async function storeMenuData(data) {
             }
 
             const periodDbId = insertedPeriod.id;
+
+            // Fetch detailed menu data for this period
+            let detailedData;
+            try {
+                detailedData = await fetchDetailedMenuData(location.id, today, period.id);
+            } catch (error) {
+                console.error(`Error fetching detailed data: ${error.message}`);
+                continue;
+            }
+
+            // Create a map of item IDs to detailed item data
+            const itemDetailsMap = new Map();
+            if (detailedData.period && detailedData.period.categories) {
+                for (const category of detailedData.period.categories) {
+                    for (const item of category.items) {
+                        itemDetailsMap.set(item.id, item);
+                    }
+                }
+            }
 
             for (const station of period.stations) {
                 const { data: insertedStation, error: stationError } = await supabase
@@ -123,31 +161,71 @@ async function storeMenuData(data) {
 
                 const stationDbId = insertedStation.id;
 
-                const items = station.items.map(item => ({
-                    station_id: stationDbId,
-                    name: item.name,
-                    calories: item.calories,
-                    portion: item.portion,
-                    date: today
-                }));
-
-                if (items.length > 0) {
-                    const { error: itemsError } = await supabase
-                        .from('menu_items')
-                        .insert(items);
-
-                    if (itemsError) {
-                        console.error(`Error storing items: ${itemsError.message}`);
-                    } else {
-                        totalItems += items.length;
-                        console.log(`✅ Added ${items.length} items from ${station.name}`);
+                // Store items with detailed data
+                for (const item of station.items) {
+                    const detailedItem = itemDetailsMap.get(item.id);
+                    
+                    // Check if vegetarian or vegan
+                    // If vegan, automatically mark as vegetarian too
+                    let isVegetarian = false;
+                    let isVegan = false;
+                    if (detailedItem?.filters) {
+                        isVegan = detailedItem.filters.some(f => f.name === 'Vegan');
+                        isVegetarian = detailedItem.filters.some(f => f.name === 'Vegetarian' || f.name === 'Vegan');
                     }
+
+                    const itemData = {
+                        station_id: stationDbId,
+                        original_id: item.id,
+                        name: item.name,
+                        calories: item.calories,
+                        portion: item.portion,
+                        date: today,
+                        is_vegetarian: isVegetarian,
+                        is_vegan: isVegan
+                    };
+
+                    const { data: insertedItem, error: itemError } = await supabase
+                        .from('menu_items')
+                        .insert(itemData)
+                        .select()
+                        .single();
+
+                    if (itemError) {
+                        console.error(`Error storing item: ${itemError.message}`);
+                        continue;
+                    }
+
+                    const menuItemId = insertedItem.id;
+
+                    // Store nutrients
+                    if (detailedItem?.nutrients && detailedItem.nutrients.length > 0) {
+                        const nutrients = detailedItem.nutrients.map(nutrient => ({
+                            menu_item_id: menuItemId,
+                            name: nutrient.name,
+                            value: nutrient.value,
+                            uom: nutrient.uom,
+                            value_numeric: nutrient.valueNumeric
+                        }));
+
+                        const { error: nutrientsError } = await supabase
+                            .from('nutrients')
+                            .insert(nutrients);
+
+                        if (nutrientsError) {
+                            console.error(`Error storing nutrients: ${nutrientsError.message}`);
+                        }
+                    }
+
+                    totalItems++;
                 }
+
+                console.log(`✅ Added ${station.items.length} items from ${station.name}`);
             }
         }
     }
 
-    console.log(`Successfully stored ${totalItems} menu items!`);
+    console.log(`\nSuccessfully stored ${totalItems} menu items with detailed data!`);
 }
 
 async function main() {
@@ -156,7 +234,7 @@ async function main() {
     try {
         const menuData = await fetchMenuData();
         await storeMenuData(menuData);
-        console.log('All done!');
+        console.log('\nAll done!');
     } catch (error) {
         console.error('Error:', error.message);
         process.exit(1);
