@@ -127,19 +127,24 @@ async function storeMenuData(data) {
             let detailedData;
             try {
                 detailedData = await fetchDetailedMenuData(location.id, today, period.id);
+                console.log(`  Successfully fetched detailed data for ${period.name}`);
             } catch (error) {
                 console.error(`Error fetching detailed data: ${error.message}`);
                 continue;
             }
 
-            // Create a map of item IDs to detailed item data
+            // Create a map of item names to detailed item data
             const itemDetailsMap = new Map();
             if (detailedData.period && detailedData.period.categories) {
                 for (const category of detailedData.period.categories) {
                     for (const item of category.items) {
-                        itemDetailsMap.set(item.id, item);
+                        // Use name as the key since basic items don't have IDs
+                        itemDetailsMap.set(item.name, item);
                     }
                 }
+                console.log(`  Mapped ${itemDetailsMap.size} items with detailed data`);
+            } else {
+                console.log(`  Warning: No categories found in detailed data`);
             }
 
             for (const station of period.stations) {
@@ -163,7 +168,12 @@ async function storeMenuData(data) {
 
                 // Store items with detailed data
                 for (const item of station.items) {
-                    const detailedItem = itemDetailsMap.get(item.id);
+                    // Match by name instead of ID
+                    const detailedItem = itemDetailsMap.get(item.name);
+                    
+                    if (!detailedItem) {
+                        console.log(`  ⚠️  No detailed data found for item: ${item.name}`);
+                    }
                     
                     // Check if vegetarian or vegan
                     // If vegan, automatically mark as vegetarian too
@@ -172,11 +182,18 @@ async function storeMenuData(data) {
                     if (detailedItem?.filters) {
                         isVegan = detailedItem.filters.some(f => f.name === 'Vegan');
                         isVegetarian = detailedItem.filters.some(f => f.name === 'Vegetarian' || f.name === 'Vegan');
+                        
+                        // Debug logging for first few items
+                        if (totalItems < 5) {
+                            console.log(`  Item: ${item.name}`);
+                            console.log(`    Filters: ${detailedItem.filters.map(f => f.name).join(', ')}`);
+                            console.log(`    isVegan: ${isVegan}, isVegetarian: ${isVegetarian}`);
+                        }
                     }
 
                     const itemData = {
                         station_id: stationDbId,
-                        original_id: item.id,
+                        original_id: detailedItem?.id || null,
                         name: item.name,
                         calories: item.calories,
                         portion: item.portion,
@@ -213,8 +230,12 @@ async function storeMenuData(data) {
                             .insert(nutrients);
 
                         if (nutrientsError) {
-                            console.error(`Error storing nutrients: ${nutrientsError.message}`);
+                            console.error(`Error storing nutrients for ${item.name}: ${nutrientsError.message}`);
+                        } else if (totalItems < 5) {
+                            console.log(`    Stored ${nutrients.length} nutrients`);
                         }
+                    } else if (totalItems < 5) {
+                        console.log(`    No nutrients found for ${item.name}`);
                     }
 
                     totalItems++;
