@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import FoodBackground from "../Components/background";
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -14,11 +15,9 @@ function Login() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-cover bg-center bg-no-repeat"
-    style={{
-      background: ' linear-gradient(360deg, #FFE6E6 -90%, #FF4B4B 40%, #1A1A1A 150%)'
-    }}
+    <div className="flex items-center justify-center min-h-screen bg-cover bg-center bg-no-repeat bg-[#05070a]"
     >
+    <FoodBackground/>
       <div className=' absolute top-10 flex flex-row items-center mb-8 text-center animate-pulse'>
         <img
         src="/logo__5_-removebg-preview.png"
