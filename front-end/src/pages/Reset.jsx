@@ -15,7 +15,7 @@ function Reset(){
           setMessage('');
      try{
           const{data,error} = await supabase.auth.resetPasswordForEmail(email, {
-               redirectTo: '${window.location.origin}/login'
+               redirectTo: `${window.location.origin}/reset-password`
           });
           if(error){
                setError(error.message);
@@ -50,7 +50,10 @@ return (
             </div>
           )}
           {message &&(
-               <div className='bg-red-100 border border-red-100 text-red-900 px-4 py-3 rounded'></div>
+               <div className='bg-red-100 border border-red-100 text-red-900 px-4 py-3 rounded'>
+                    {message}
+               </div>
+               
           )}
           <div>
             <label className="block text-sm font-medium mb-2 text-red-400">Email</label>

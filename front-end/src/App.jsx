@@ -9,6 +9,7 @@ import { Navigate } from "react-router-dom";
 import { NotFound } from "./pages/NotFound";
 import { Steast } from "./pages/Steast-breakfast";
 import { SupabaseClient } from "@supabase/supabase-js"; 
+import SetPass from "./pages/setPass";
 
 function App() {
   return (
@@ -17,7 +18,8 @@ function App() {
         <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup/>}/>
-        <Route path="/forgot" element={<Reset/>}/>        
+        <Route path="/forgot" element={<Reset/>}/>   
+        <Route path="/reset-password" element={<SetPass/>}/>   
         <Route path="/home" element={<Home/>}></Route>
         <Route path="/vote" element={<Vote/>} />
         <Route path="/steast" element={<Steast/>} />
