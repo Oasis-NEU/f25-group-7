@@ -5,6 +5,7 @@ import Signup from "./pages/Signup";
 import Reset from "./pages/Reset";
 import { Home } from "./pages/Home";
 import { Vote } from "./pages/Vote";
+import { Navigate } from "react-router-dom";
 import { NotFound } from "./pages/NotFound";
 import { Steast } from "./pages/Steast-breakfast";
 import { SupabaseClient } from "@supabase/supabase-js"; 
@@ -13,7 +14,8 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/login" index element={<Login/>} />
+        <Route path="/" element={<Navigate to="/login" />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup/>}/>
         <Route path="/forgot" element={<Reset/>}/>        
         <Route path="/home" element={<Home/>}></Route>
