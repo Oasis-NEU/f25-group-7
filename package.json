@@ -1,5 +1,6 @@
 {
     "dependencies": {
+        "@gsap/react": "^2.1.2",
         "@radix-ui/react-toast": "^1.2.15",
         "@supabase/supabase-js": "^2.81.0",
         "class-variance-authority": "^0.7.1",
@@ -7,6 +8,7 @@
         "dotenv": "^17.2.3",
         "embla-carousel-react": "^8.6.0",
         "framer-motion": "^12.23.24",
+        "gsap": "^3.13.0",
         "install": "^0.13.0",
         "lucide-react": "^0.553.0",
         "motion": "^12.23.24",
