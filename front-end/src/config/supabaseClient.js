@@ -1,8 +1,10 @@
-import { createClient } from '@supabase/supabase-js'
+// src/supabaseClient.js
+import { createClient } from '@supabase/supabase-js';
 
-const supabaseURL =
-    import.meta.env.VITE_SUPABASE_URL;
-const supabasePublicKey =
-    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-export const supabase = createClient(supabaseURL, supabasePublicKey);
+console.log('Supabase URL:', supabaseUrl);          // should log URL
+console.log('Supabase Key:', supabaseAnonKey);      // should log key
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);

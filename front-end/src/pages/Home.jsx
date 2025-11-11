@@ -8,12 +8,12 @@ export const Home = () => {
             <FoodBackground />
             <div className="relative z-10 flex items-center justify-center min-h-screen">
             <div className="text-center">
-                <h1 className="text-6xl font-bold text-white">Welcome To React bits</h1>
+                <h1 className="text-6xl font-bold text-red-500">Welcome To NU RATE-ON</h1>
                 <div className="flex items-baseline justify-center gap-3 text-4xl mt-4">
                 <p className="text-5xl text-gray-300">Eating is </p>
                 <RotatingText
-                    texts={["React", "Bits", "Is", "Cool!"]}
-                    mainClassName="px-2 sm:px-2 md:px-3 bg-cyan-300 text-black overflow-hidden py-0.0 sm:py-0 md:py-0 justify-center rounded-lg text-4xl"
+                    texts={["Delicious!", "Nutritious!", "Fun!"]}
+                    mainClassName="px-2 sm:px-2 md:px-3 bg-white text-black overflow-hidden py-0.0 sm:py-0 md:py-0 justify-center rounded-lg text-4xl"
                     staggerFrom={"last"}
                     initial={{ y: "100%" }}
                     animate={{ y: 0 }}
