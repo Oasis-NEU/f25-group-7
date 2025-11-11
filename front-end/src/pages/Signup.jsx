@@ -26,8 +26,7 @@ function Signup(){
      if (error){
           setError(error.message);
      } else{
-          navigate("/login")
-     } 
+          redirectTo: `${window.location.origin}/login`     } 
 } catch (err){
      console.error(err);
      setError("An Error Occurred.")
