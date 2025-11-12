@@ -172,22 +172,24 @@ async function storeMenuData(data) {
                     const detailedItem = itemDetailsMap.get(item.name);
                     
                     if (!detailedItem) {
-                        console.log(`  ⚠️  No detailed data found for item: ${item.name}`);
+                        console.log(` No detailed data found for item: ${item.name}`);
                     }
                     
-                    // Check if vegetarian or vegan
+                    // Check if vegetarian, vegan, or high protein
                     // If vegan, automatically mark as vegetarian too
                     let isVegetarian = false;
                     let isVegan = false;
+                    let isHighProtein = false;
                     if (detailedItem?.filters) {
                         isVegan = detailedItem.filters.some(f => f.name === 'Vegan');
                         isVegetarian = detailedItem.filters.some(f => f.name === 'Vegetarian' || f.name === 'Vegan');
+                        isHighProtein = detailedItem.filters.some(f => f.name === 'Good Source of Protein');
                         
                         // Debug logging for first few items
                         if (totalItems < 5) {
                             console.log(`  Item: ${item.name}`);
                             console.log(`    Filters: ${detailedItem.filters.map(f => f.name).join(', ')}`);
-                            console.log(`    isVegan: ${isVegan}, isVegetarian: ${isVegetarian}`);
+                            console.log(`    isVegan: ${isVegan}, isVegetarian: ${isVegetarian}, isHighProtein: ${isHighProtein}`);
                         }
                     }
 
@@ -199,7 +201,8 @@ async function storeMenuData(data) {
                         portion: item.portion,
                         date: today,
                         is_vegetarian: isVegetarian,
-                        is_vegan: isVegan
+                        is_vegan: isVegan,
+                        is_high_protein: isHighProtein
                     };
 
                     const { data: insertedItem, error: itemError } = await supabase
@@ -241,7 +244,7 @@ async function storeMenuData(data) {
                     totalItems++;
                 }
 
-                console.log(`✅ Added ${station.items.length} items from ${station.name}`);
+                console.log(`Added ${station.items.length} items from ${station.name}`);
             }
         }
     }
