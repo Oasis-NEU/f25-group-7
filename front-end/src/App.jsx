@@ -22,7 +22,7 @@ function App() {
         <Route path="/reset-password" element={<SetPass/>}/>   
         <Route path="/home" element={<Home/>}></Route>
         <Route path="/vote" element={<Vote/>} />
-        <Route path="/steast" element={<Steast/>} />
+        <Route path="/menu/:hall/:meal" element={<Steast/>} />
         <Route path= "*" element={<NotFound/>}></Route>
       </Routes>
     </Router>

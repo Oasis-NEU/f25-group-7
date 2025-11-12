@@ -2,11 +2,14 @@ import React, { useState } from "react";
 import FoodBackground from "../Components/background";
 import PillNav from "../Components/Pill-Selection";
 import MenuCard from "../Components/MenuCard";
+import { useParams } from "react-router-dom";
 
 export const Steast = () => {
     // Track selected station and dietary restriction
     const [selectedStation, setSelectedStation] = useState(null);
     const [selectedDietaryRestriction, setSelectedDietaryRestriction] = useState(null);
+    const { hall, meal } = useParams();
+    console.log(hall, meal);
 
     const stations = [
         { label: "Cucina", value: "cucina" },
@@ -80,7 +83,7 @@ export const Steast = () => {
 
                 {/* Menu card in the center */}
                 <div className="flex items-center justify-center min-h-screen pt-24 pb-8 px-4 md:px-8">
-                    <div className="w-full max-w-[240px]">
+                    <div className="w-full max-w-60">
                         <MenuCard 
                             food={{
                                 name: "Food Item",
