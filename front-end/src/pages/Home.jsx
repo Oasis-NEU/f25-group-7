@@ -1,19 +1,36 @@
+import React, {useState} from "react";
 import FoodBackground from "../Components/background";
 import RotatingText from "../Components/Rotating text";
-import PillNav from "../Components/Pill-Selection";
+import { useNavigate } from "react-router-dom";
 
 export const Home = () => {
+    const navigate = useNavigate();
+    const [selectedTime, setSelectedTime] = useState(null);
+    const [selectedLocation,setSelectedLocation] = useState(null);
+
+    const handleFindMenu = () => {
+        if(!selectedTime || !selectedLocation){
+            alert("Please select both a time and a location before continuing!")
+            return;
+        }
+    }
     return (
         <div className="min-h-screen bg-black">
             <FoodBackground />
-            <div className="relative z-10 flex items-center justify-center min-h-screen">
+            <div className=' absolute top-10 left-1/2 transform -translate-x-1/2 flex flex-row items-center mb-8 text-center '>
+        <img
+        src="/logo__7_-removebg-preview.png"
+        alt='NU Rate-ON Logo'
+        className='w-50 h-50 mb-4 drop-shadow-md'/> 
+      </div>
+            <div className="relative z-10 flex flex-col items-center justify-center min-h-screen text-3xl  gap-3">
             <div className="text-center">
-                <h1 className="text-6xl font-bold text-red-500">Welcome To NU RATE-ON</h1>
+                <h1 className="text-6xl font-bold text-red-400">Welcome To NU RATE-ON</h1>
                 <div className="flex items-baseline justify-center gap-3 text-4xl mt-4">
                 <p className="text-5xl text-gray-300">Eating is </p>
                 <RotatingText
-                    texts={["Delicious!", "Nutritious!", "Fun!"]}
-                    mainClassName="px-2 sm:px-2 md:px-3 bg-white text-black overflow-hidden py-0.0 sm:py-0 md:py-0 justify-center rounded-lg text-4xl"
+                    texts={["Delicious!", "Nutritious!", "Energizing!", "Comforting!", "Flavorful!", "Wholesome!", "Satisfying!"]}
+                    mainClassName="px-2 sm:px-2 md:px-3 bg-white/40 bg-blur text-black overflow-hidden py-0.0 sm:py-0 md:py-0 justify-center rounded-lg text-4xl"
                     staggerFrom={"last"}
                     initial={{ y: "100%" }}
                     animate={{ y: 0 }}
@@ -27,42 +44,41 @@ export const Home = () => {
             <div className="flex flex-col items-center justify-center gap-10 mt-16">
             <div className="flex flex-col items-center gap-4 w-full">
                 <p className="text-white text-xl font-semibold">Select Time</p>
-                <PillNav
-                    logoAlt="Company Logo"
-                    items={[
-                    { label: "Breakfast", href: "/" },
-                    { label: "Lunch", href: "/about" },
-                    { label: "Dinner", href: "/services" },]}
-                    activeHref="/"
-                    className="custom-nav"
-                    ease="power2.easeOut"
-                    baseColor="#000000"
-                    pillColor="#ffffff"
-                    hoveredPillTextColor="#ffffff"
-                    pillTextColor="#000000"
-                    initialLoadAnimation={false}/>
+                < div className="flex gap-4 flex-wrap justify-center">
+                {["Breakfast", "Lunch","Dinner"].map((time)=>(
+                    <button 
+                    key={time}
+                    onClick={() => setSelectedTime(time.toLowerCase())}
+                    className={`px-6 py-2 rounded-full text-lg font-semibold transition-colors ${
+                    selectedTime === time.toLowerCase()
+                    ? "bg-red-500 text-white" : "bg-white text-black hover:bg-gray-800 hover:text-white cursor-pointer"
+                    }`}
+                    >
+                        {time}
+                    </button>
+                ))}
+                </div>
             </div>
 
             <div className="flex flex-col items-center gap-4 w-full">
                 <p className="text-white text-xl font-semibold">Select Location</p>
-                <PillNav
-                    logoAlt="Company Logo"
-                    items={[
-                        { label: "Stetson East", href: "/" },
-                        { label: "International Village", href: "/about" },
-                        { label: "60 Belvadere", href: "/services" },]}
-                    activeHref="/"
-                    className="custom-nav"
-                    ease="power2.easeOut"
-                    baseColor="#000000"
-                    pillColor="#ffffff"
-                    hoveredPillTextColor="#ffffff"
-                    pillTextColor="#000000"
-                    initialLoadAnimation={false}
-                />
+                 < div className="flex gap-4 flex-wrap justify-center">
+                {["Stetson East", "International Village","60 Belvidere"].map((location)=>(
+                    <button 
+                    key={location}
+                    onClick={() => setSelectedLocation(location.toLowerCase())}
+                    className={`px-6 py-2 rounded-full text-lg font-semibold transition-colors ${
+                    selectedLocation === location.toLowerCase()
+                    ? "bg-red-500 text-white" : "bg-white text-black hover:bg-gray-800 hover:text-white cursor-pointer"
+                    }`}
+                    >
+                        {location}
+                    </button>
+                ))}
+                </div>
             </div>
 
-            <button className="w-[60%] sm:w-[40%] md:w-[30%] px-8 py-3 bg-white text-black font-semibold text-lg rounded-full hover:bg-gray-200 transition-colors">
+            <button className="w-[60%] sm:w-[40%] md:w-[30%] px-8 py-3 bg-white text-black font-semibold text-lg rounded-full hover:bg-gray-800 transition-colors cursor-pointer">
                 Find the Menu
             </button>
             </div>

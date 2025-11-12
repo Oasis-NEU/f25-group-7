@@ -90,13 +90,13 @@ function Login() {
 
         <p className="mt-4 text-center text-white text-sm">
           Don't have an account?{' '}
-          <Link to="/signup" className="font-semibold hover:text-red-300 hover:underline">
+          <Link to="/signup" className="font-semibold hover:text-red-300 hover:underline cursor-pointer">
             Sign up
           </Link>
         </p>
         <p className="mt-4 text-center text-white text-sm">
           Forgot Password?{' '}
-          <Link to="/forgot" className="font-semibold hover:underline hover:text-red-300">
+          <Link to="/forgot" className="font-semibold hover:underline hover:text-red-300 cursor-pointer">
             Reset Password
           </Link>
         </p>
