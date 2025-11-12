@@ -101,7 +101,7 @@
     left: 50%;
     bottom: 0;
     border-radius: 50%;
-    background: var(--base, #000);
+    background: var(--hover-circle-color, #ef4444);
     z-index: 1;
     display: block;
     pointer-events: none;
@@ -144,6 +144,58 @@
     background: var(--base, #000);
     border-radius: 50px;
     z-index: 4;
+}
+
+/* Selected state for selection mode */
+.pill.is-selected {
+    background: var(--selected-pill-bg, #ef4444) !important;
+}
+
+.pill.is-selected .pill-label {
+    color: var(--selected-pill-text, #fff) !important;
+}
+
+/* Selected pill hover circle - use red color for hover */
+.pill.is-selected .hover-circle {
+    background: var(--hover-circle-color, #ef4444);
+}
+
+/* Selected pill hover text - keep white for contrast */
+.pill.is-selected .pill-label-hover {
+    color: var(--selected-pill-text, #fff) !important;
+}
+
+/* Selection mode - hide logo background and container background */
+.pill-nav.selection-mode .pill-nav-items {
+    background: transparent;
+}
+
+.pill-nav.selection-mode .pill-list {
+    padding: 0;
+    gap: var(--pill-gap, 3px);
+}
+
+/* Button reset for selection mode */
+.pill-nav.selection-mode .pill {
+    border: none;
+    outline: none;
+    background: var(--pill-bg, #fff);
+}
+
+/* Selected pills in selection mode override the default background */
+.pill-nav.selection-mode .pill.is-selected {
+    background: var(--selected-pill-bg, #ef4444) !important;
+}
+
+.pill-nav.selection-mode .pill:focus {
+    outline: 2px solid var(--selected-pill-bg, #ef4444);
+    outline-offset: 2px;
+}
+
+/* Mobile menu selected state */
+.mobile-menu-link.is-selected {
+    background-color: var(--selected-pill-bg, #ef4444) !important;
+    color: var(--selected-pill-text, #fff) !important;
 }
 
 .desktop-only {
