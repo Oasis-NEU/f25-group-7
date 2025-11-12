@@ -80,7 +80,7 @@ export const Steast = () => {
 
                 {/* Menu card in the center */}
                 <div className="flex items-center justify-center min-h-screen pt-24 pb-8 px-4 md:px-8">
-                    <div className="w-full max-w-md">
+                    <div className="w-full max-w-[240px]">
                         <MenuCard 
                             food={{
                                 name: "Food Item",
