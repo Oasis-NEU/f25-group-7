@@ -4,7 +4,8 @@ import FoodBackground from "../Components/background";
 import { supabase } from '../config/supabaseClient';
 
 function Signup(){
-     const [email, setEmail] = useState('');
+     const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
      const [password, setPassword] = useState('');
      const [error, setError] = useState('');
      const [loading, setLoading] = useState(false);
@@ -19,9 +20,14 @@ function Signup(){
     }
     setLoading(true);
     try{
-     const{data, error} = await supabase.auth.signUp({
-          email,
+     const{data, error} = await supabase.auth.signUp({    
+      email,
           password,
+          options:{
+            data: {
+              full_name: name,
+            },
+          },
      });
      if (error){
           setError(error.message);
@@ -54,6 +60,17 @@ return (
               {error}
             </div>
           )}
+          <div>
+            <label className="block text-sm font-medium mb-2 text-red-400">Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-red-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Full Name"
+            />
+          </div>
           <div>
             <label className="block text-sm font-medium mb-2 text-red-400">Email</label>
             <input

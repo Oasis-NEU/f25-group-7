@@ -97,12 +97,12 @@ export default function Navbar() {
                 className="flex items-center gap-2 bg-white/5 hover:bg-white/10 px-3 py-1 rounded-full text-sm cursor-pointer text-white transition-all duration-200"
               >
                 <div className="w-7 h-7 rounded-full bg-red-400 flex items-center justify-center text-white font-semibold uppercase shadow-md">
-                  {user.user_metadata?.full_name
-                    ? user.user_metadata.full_name.charAt(0)
+                  {user.user_metadata?.email
+                    ? user.user_metadata.email.charAt(0)
                     : "U"}
                 </div>
                 <span className="hidden sm:inline-block">
-                  {user.user_metadata?.full_name ?? "User"}
+                  {user.user_metadata?.email ?? "User"}
                 </span>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -119,7 +119,7 @@ export default function Navbar() {
                 <div className="user-dropdown">
                   <div className="px-4 py-3 text-sm text-gray-200 border-b border-gray-700">
                     <div className="font-semibold text-white">
-                      {user.user_metadata?.full_name ?? "Signed in"}
+                      {user.user_metadata?.email ?? "Signed in"}
                     </div>
                   </div>
                   <div className="px-3 py-2">

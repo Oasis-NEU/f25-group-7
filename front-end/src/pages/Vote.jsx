@@ -6,21 +6,41 @@ import TextType from '../Components/TextType';
 import { useState, useEffect } from "react";
 
 export const Vote = () => {
-  const handleVote = async (option) => {
-    await castVote(option);
-    alert(`Vote for ${option} cast!`);
-  };
 
   const [votes, setVotes] = useState({ steast: 0, iv: 0 });
 
+   // Fetch votes function
+  const fetchVotes = async () => {
+    const steastVotes = await lookupVotes("steast");
+    const ivVotes = await lookupVotes("iv");
+    setVotes({ steast: steastVotes, iv: ivVotes });
+  };
+
+  // Handle vote
+  const handleVote = async (option) => {
+    await castVote(option);
+    await fetchVotes(); // Immediately update votes after voting
+    alert(`Vote for ${option} cast!`);
+  };
+
+  // Fetch votes initially and set interval for automatic updates
   useEffect(() => {
-    async function fetchVotes() {
-      const steastVotes = await lookupVotes("steast");
-      const ivVotes = await lookupVotes("iv");
-      setVotes({ steast: steastVotes, iv: ivVotes });
-    }
-    fetchVotes();
+    let mounted = true;
+
+    const updateVotes = async () => {
+      if (!mounted) return;
+      await fetchVotes();
+    };
+
+    updateVotes(); // initial fetch
+    const interval = setInterval(updateVotes, 2000); // fetch every 2 seconds
+
+    return () => {
+      mounted = false;
+      clearInterval(interval); // cleanup interval
+    };
   }, []);
+
 
   return (
     <div className="min-h-screen bg-black">
@@ -44,14 +64,14 @@ export const Vote = () => {
               onClick={() => handleVote("steast")}
             >
               <Building className="w-5 h-5" />
-              <span>Vote for Steast</span>
+              <span>Vote for Stetson East</span>
               <span>{votes.steast}</span>
             </button>
             <button
               className="flex items-center gap-2 px-6 py-3 bg-red-900 text-white rounded-lg hover:bg-red-600 transition"
               onClick={() => handleVote("iv")}
             >
-              <span>Vote for IV</span>
+              <span>Vote for International Village</span>
               <span>{votes.iv}</span>
               <Building2 className="w-5 h-5" />
             </button>
