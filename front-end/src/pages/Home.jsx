@@ -55,7 +55,9 @@ export const Home = () => {
             </div>
                 </section>
              //hall section
+             
             <section className="flex flex-col items-center py-28 px-6 mt-42 relative z-10 bg-black">
+                 <FoodBackground />
                 <p className="text-white text-5xl font-bold mb-10">Explore Our Dining Halls</p>
                  <div className="flex gap-8 max-w-6xl flex-wrap justify-center w-full">
                 {diningHalls.map((hall,index)=>(
@@ -74,6 +76,7 @@ export const Home = () => {
                 </div>
                 </section>
             <div className="relative z-10 flex flex-col items-center gap-16 py-20 bg-black">
+                 <FoodBackground />
             <h2 className="text-4xl font-semibold text-white mb-10">Select Meal Time</h2>
                 < div className="flex gap-4 flex-wrap justify-center">
                 {["Breakfast", "Lunch","Dinner"].map((time)=>(
@@ -92,7 +95,7 @@ export const Home = () => {
             </div>
 
             <div className="flex justify-center mb-10">
-            <button className="w-[60%] sm:w-[40%] md:w-[30%] px-8 py-3 bg-white text-black font-semibold text-lg rounded-full hover:bg-gray-800 transition-colors cursor-pointer"
+            <button className="w-[60%] sm:w-[40%] md:w-[30%] px-8 py-3 bg-white text-black font-semibold text-lg rounded-full hover:bg-gray-800 transition-colors cursor-pointer hover:text-white"
             onClick={handleFindMenu}>
                 Find the Menu
             </button>
