@@ -8,12 +8,12 @@ import { Vote } from "./pages/Vote";
 import { Navigate } from "react-router-dom";
 import { NotFound } from "./pages/NotFound";
 import { Steast } from "./pages/Steast-breakfast";
-import { SupabaseClient } from "@supabase/supabase-js"; 
+import Navbar from "./functions/Navbar";
 import SetPass from "./pages/setPass";
-
 function App() {
   return (
     <Router>
+      <Navbar />
       <Routes>
         <Route path="/" element={<Navigate to="/login" />} />
         <Route path="/login" element={<Login />} />
@@ -24,6 +24,7 @@ function App() {
         <Route path="/vote" element={<Vote/>} />
         <Route path="/menu/:hall/:meal" element={<Steast/>} />
         <Route path= "*" element={<NotFound/>}></Route>
+        
       </Routes>
     </Router>
   );

@@ -23,7 +23,7 @@ function Login() {
       setError("Invalid Password or Email!");
 
     } else if (data.user) {
-      navigate("/Home");
+      navigate("/home");
     }
   }
   catch (err) {
