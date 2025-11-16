@@ -56,4 +56,3 @@ export const MenuCard = ({ food }) => {
 };
 
 export default MenuCard;
-

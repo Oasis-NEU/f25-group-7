@@ -129,7 +129,6 @@ export default function Navbar() {
           <nav className="hidden md:flex items-center gap-2">
             <NavLink to="/home">Home</NavLink>
             <NavLink to="/menu/stetson-east/breakfast">Menu</NavLink>
-            <NavLink to="/about">About</NavLink>
             {user && <NavLink to="/vote">Vote</NavLink>}
           </nav>
         )}
