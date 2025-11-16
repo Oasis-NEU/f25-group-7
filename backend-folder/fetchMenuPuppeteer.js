@@ -2,7 +2,7 @@ require('dotenv').config();
 console.log('SUPABASE_URL:', process.env.SUPABASE_URL);
 console.log('SUPABASE_KEY:', process.env.SUPABASE_KEY ? 'Found' : 'Missing');
 const { createClient } = require('@supabase/supabase-js');
-const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer-core');
 
 // Support both direct SUPABASE_* env vars and Vite-prefixed VITE_* vars
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL?.replace(/^"|"$/g, '');
@@ -22,22 +22,28 @@ async function fetchMenuData() {
 
     const browser = await puppeteer.launch({
         headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
     });
 
     const page = await browser.newPage();
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36');
 
     // Fetch main menu data
-    await page.goto('https://apiv4.dineoncampus.com/sites/todays_menu?siteId=5751fd2b90975b60e048929a', {
+    await page.goto('https://api.dineoncampus.com/v1/sites/5751fd2b90975b60e048929a/locations', {
         waitUntil: 'networkidle0'
     });
 
     const data = await page.evaluate(() => {
-        return JSON.parse(document.body.innerText);
+        return document.body.innerText;
     });
 
-    console.log(`Found ${data.locations.length} locations`);
+    console.log('Raw response:', data);
+
+    const parsedData = JSON.parse(data);
+
+    console.log('API response:', JSON.stringify(data, null, 2));
+    console.log(`Found ${data.locations ? data.locations.length : 0} locations`);
     
     await browser.close();
     return data;
@@ -48,7 +54,8 @@ async function fetchDetailedMenuData(locationId, date, periodId) {
     
     const browser = await puppeteer.launch({
         headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
     });
 
     const page = await browser.newPage();

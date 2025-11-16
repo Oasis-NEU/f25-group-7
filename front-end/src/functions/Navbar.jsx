@@ -128,7 +128,7 @@ export default function Navbar() {
         {!isOnHomePage && (
           <nav className="hidden md:flex items-center gap-2">
             <NavLink to="/home">Home</NavLink>
-            <NavLink to="/about">Menu</NavLink>
+            <NavLink to="/about">About</NavLink>
             {user && <NavLink to="/vote">Vote</NavLink>}
           </nav>
         )}
@@ -214,7 +214,7 @@ export default function Navbar() {
       {!isOnHomePage && (
         <div className={`mobile-menu md:hidden ${open ? "open" : ""}`}>
           <NavLink to="/home" onClick={() => setOpen(false)}>Home</NavLink>
-          <NavLink to="/about" onClick={() => setOpen(false)}>Menu</NavLink>
+          <NavLink to="/about" onClick={() => setOpen(false)}>About</NavLink>
           {user && <NavLink to="/vote" onClick={() => setOpen(false)}>Vote</NavLink>}
         </div>
       )}
