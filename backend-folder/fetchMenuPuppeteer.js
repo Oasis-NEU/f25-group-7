@@ -4,10 +4,18 @@ console.log('SUPABASE_KEY:', process.env.SUPABASE_KEY ? 'Found' : 'Missing');
 const { createClient } = require('@supabase/supabase-js');
 const puppeteer = require('puppeteer');
 
-const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_KEY
-);
+// Support both direct SUPABASE_* env vars and Vite-prefixed VITE_* vars
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL?.replace(/^"|"$/g, '');
+const SUPABASE_KEY = process.env.SUPABASE_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY?.replace(/^"|"$/g, '');
+
+console.log('SUPABASE_URL:', SUPABASE_URL ? 'Found' : 'Missing');
+console.log('SUPABASE_KEY:', SUPABASE_KEY ? 'Found' : 'Missing');
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+    console.error('Missing Supabase credentials. Set SUPABASE_URL and SUPABASE_KEY, or VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
+    process.exit(1);
+}
 
 async function fetchMenuData() {
     console.log('Launching browser to fetch menu data...');

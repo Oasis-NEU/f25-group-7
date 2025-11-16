@@ -4,65 +4,50 @@ export const MenuCard = ({ food }) => {
     const [isExpanded, setIsExpanded] = useState(false);
 
     return (
-        <div 
-            className={`bg-white rounded-lg shadow-md overflow-hidden transition-all duration-300 cursor-pointer border border-gray-200 ${
-                isExpanded ? 'shadow-xl border-gray-300' : 'hover:shadow-lg hover:border-gray-300'
-            }`}
+        <div
             onClick={() => setIsExpanded(!isExpanded)}
+            className={`relative rounded-2xl overflow-hidden transform transition-all duration-300 cursor-pointer shadow-lg hover:scale-105`}
         >
-            {/* Card Header */}
-            <div className="p-4 border-b border-gray-200 bg-white">
-                <h3 className="text-lg font-semibold text-gray-800">
-                    {food.name}
-                </h3>
-            </div>
+            <div className="absolute inset-0 bg-linear-to-br from-indigo-700 via-pink-600 to-red-500 opacity-20 -z-10" />
+            <div className="bg-linear-to-tr from-white/6 to-white/3 backdrop-blur-sm border border-white/6 rounded-2xl p-5 h-full flex flex-col justify-between">
+                <div>
+                    <h3 className="text-lg font-semibold text-white leading-tight mb-2">{food.name}</h3>
+                    {food.description && <p className="text-sm text-gray-300 mb-3">{food.description}</p>}
+                </div>
 
-            {/* Card Body - Expandable */}
-            <div 
-                className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                    isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-                }`}
-            >
+                <div className="mt-4 flex items-center justify-between">
+                    <div className="flex gap-2 items-center flex-wrap">
+                        <div className="px-3 py-1 rounded-full bg-white/6 text-white text-xs font-medium">{food.calories ?? 'N/A'} cal</div>
+                        {food.is_high_protein ? (
+                            <div className="px-3 py-1 rounded-full bg-amber-500/30 text-amber-200 text-xs font-semibold">🥚 High Protein</div>
+                        ) : (
+                            <div className="px-3 py-1 rounded-full bg-white/10 text-gray-300 text-xs font-medium">Standard</div>
+                        )}
+                    </div>
+
+                    <div className="text-sm text-gray-200">{food.portion ?? 'Portion N/A'}</div>
+                </div>
+
                 {isExpanded && (
-                    <div className="p-4 bg-gray-50">
-                        <div className="grid grid-cols-3 gap-4 mb-4">
-                            {/* Calories */}
-                            <div className="text-center">
-                                <div className="text-xs font-medium text-gray-500 uppercase mb-2">
-                                    Calories
-                                </div>
-                                <div className="text-xl font-bold text-gray-800">
-                                    {food.calories || 'N/A'}
-                                </div>
+                    <div className="mt-4 pt-4 border-t border-white/6 text-sm text-gray-200">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <div className="text-xs text-gray-300 uppercase">Calories</div>
+                                <div className="font-semibold text-white">{food.calories ?? 'N/A'}</div>
                             </div>
-
-                            {/* Protein */}
-                            <div className="text-center">
-                                <div className="text-xs font-medium text-gray-500 uppercase mb-2">
-                                    Protein
-                                </div>
-                                <div className="text-xl font-bold text-gray-800">
-                                    {food.protein || 'N/A'}
-                                </div>
-                            </div>
-
-                            {/* Portion */}
-                            <div className="text-center">
-                                <div className="text-xs font-medium text-gray-500 uppercase mb-2">
-                                    Portion
-                                </div>
-                                <div className="text-xl font-bold text-gray-800">
-                                    {food.portion || 'N/A'}
-                                </div>
+                            <div>
+                                <div className="text-xs text-gray-300 uppercase">Portion</div>
+                                <div className="font-semibold text-white">{food.portion ?? 'N/A'}</div>
                             </div>
                         </div>
-
-                        {/* Additional details if available */}
-                        {food.description && (
-                            <div className="pt-4 border-t border-gray-200">
-                                <p className="text-sm text-gray-600 leading-relaxed">{food.description}</p>
-                            </div>
-                        )}
+                        <div className="mt-3">
+                            {food.is_high_protein ? (
+                                <div className="px-3 py-2 inline-block rounded-full bg-amber-500/30 text-amber-200 text-xs font-semibold">🥚 Good Source of Protein</div>
+                            ) : (
+                                <div className="px-3 py-2 inline-block rounded-full bg-white/10 text-gray-300 text-xs font-medium">Standard Protein Content</div>
+                            )}
+                        </div>
+                        {food.description && <p className="mt-3 text-gray-300">{food.description}</p>}
                     </div>
                 )}
             </div>

@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from "react";
 import FoodBackground from "../Components/background";
-import PillNav from "../Components/Pill-Selection";
 import MenuCard from "../Components/MenuCard";
 import { useParams } from "react-router-dom";
 import { supabase } from "../config/supabaseClient";
 
-export function Steast() {
+export function DiningHall() {
     const [selectedStation, setSelectedStation] = useState(null);
     const [selectedDietaryRestriction, setSelectedDietaryRestriction] = useState(null);
     const [menuItems, setMenuItems] = useState([]);
@@ -16,7 +15,6 @@ export function Steast() {
     const dietaryRestrictions = [
         { label: "Vegan", value: "vegan" },
         { label: "Vegetarian", value: "vegetarian" },
-        { label: "🥚 High Protein", value: "high_protein" },
     ];
 
     const fetchMenu = async () => {
@@ -32,6 +30,7 @@ export function Steast() {
             if (locError) throw locError;
             if (!locations || locations.length === 0) {
                 setMenuItems([]);
+                setStations([]);
                 return;
             }
 
@@ -47,6 +46,7 @@ export function Steast() {
             });
             if (!targetLocation) {
                 setMenuItems([]);
+                setStations([]);
                 return;
             }
 
@@ -61,6 +61,7 @@ export function Steast() {
             const targetPeriod = (periods || []).find((p) => p.name.toLowerCase().includes(meal.toLowerCase()));
             if (!targetPeriod) {
                 setMenuItems([]);
+                setStations([]);
                 return;
             }
 
@@ -108,8 +109,6 @@ export function Steast() {
                 return;
             }
 
-            // Items already have calories, is_high_protein flag, etc.
-            // Comprehensive high-protein detection logic
             const normalizedItems = items.map((i) => {
                 // Comprehensive high-protein detection logic
                 let isHighProteinByName = false;
@@ -176,16 +175,11 @@ export function Steast() {
                 };
             });
 
-            // If user selected High Protein, apply client-side filter
-            let finalItems = normalizedItems || [];
-            if (selectedDietaryRestriction && selectedDietaryRestriction.value === 'high_protein') {
-                finalItems = finalItems.filter((i) => i.is_high_protein);
-            }
-
-            setMenuItems(finalItems);
+            setMenuItems(normalizedItems || []);
         } catch (err) {
             console.error("Error fetching menu:", err.message || err);
             setMenuItems([]);
+            setStations([]);
         } finally {
             setIsLoading(false);
         }
@@ -249,20 +243,22 @@ export function Steast() {
                         </div>
 
                         {/* Stations filter row */}
-                        <div className="w-full mb-6">
-                            <p className="text-white font-semibold text-xs mb-2 opacity-70 uppercase tracking-wide">Station</p>
-                            <div className="flex gap-3 flex-wrap">
-                                {stations.map((s) => (
-                                    <button 
-                                        key={s.value} 
-                                        onClick={() => setSelectedStation(selectedStation?.value === s.value ? null : s)} 
-                                        className={`px-4 py-2 rounded-full text-sm font-medium transition ${selectedStation?.value === s.value ? 'bg-red-500 text-white shadow-lg shadow-red-500/30' : 'bg-white/10 text-gray-200 hover:bg-white/20'}`}
-                                    >
-                                        {s.label}
-                                    </button>
-                                ))}
+                        {stations.length > 0 && (
+                            <div className="w-full mb-6">
+                                <p className="text-white font-semibold text-xs mb-2 opacity-70 uppercase tracking-wide">Station</p>
+                                <div className="flex gap-3 flex-wrap">
+                                    {stations.map((s) => (
+                                        <button 
+                                            key={s.value} 
+                                            onClick={() => setSelectedStation(selectedStation?.value === s.value ? null : s)} 
+                                            className={`px-4 py-2 rounded-full text-sm font-medium transition ${selectedStation?.value === s.value ? 'bg-red-500 text-white shadow-lg shadow-red-500/30' : 'bg-white/10 text-gray-200 hover:bg-white/20'}`}
+                                        >
+                                            {s.label}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
+                        )}
 
                         {/* Dietary filter row */}
                         <div className="w-full mb-8">
@@ -309,4 +305,4 @@ export function Steast() {
     );
 }
 
-export default Steast;
+export default DiningHall;

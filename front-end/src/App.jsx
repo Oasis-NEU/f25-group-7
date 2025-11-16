@@ -7,7 +7,7 @@ import { Home } from "./pages/Home";
 import { Vote } from "./pages/Vote";
 import { Navigate } from "react-router-dom";
 import { NotFound } from "./pages/NotFound";
-import { Steast } from "./pages/Steast-breakfast";
+import DiningHall from "./pages/DiningHall";
 import Navbar from "./functions/Navbar";
 import SetPass from "./pages/setPass";
 function App() {
@@ -22,7 +22,7 @@ function App() {
         <Route path="/reset-password" element={<SetPass/>}/>   
         <Route path="/home" element={<Home/>}></Route>
         <Route path="/vote" element={<Vote/>} />
-        <Route path="/menu/:hall/:meal" element={<Steast/>} />
+        <Route path="/menu/:hall/:meal" element={<DiningHall/>} />
         <Route path= "*" element={<NotFound/>}></Route>
         
       </Routes>
