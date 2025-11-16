@@ -40,14 +40,28 @@ export const MenuCard = ({ food }) => {
                                 <div className="font-semibold text-white">{food.portion ?? 'N/A'}</div>
                             </div>
                         </div>
-                        <div className="mt-3">
-                            {food.is_high_protein ? (
-                                <div className="px-3 py-2 inline-block rounded-full bg-amber-500/30 text-amber-200 text-xs font-semibold">🥚 Good Source of Protein</div>
-                            ) : (
-                                <div className="px-3 py-2 inline-block rounded-full bg-white/10 text-gray-300 text-xs font-medium">Standard Protein Content</div>
+                        <div className="mt-3 flex flex-col gap-2">
+                            <div>
+                                {food.is_high_protein ? (
+                                    <div className="px-3 py-2 inline-block rounded-full bg-amber-500/30 text-amber-200 text-xs font-semibold">🥚 Good Source of Protein</div>
+                                ) : (
+                                    <div className="px-3 py-2 inline-block rounded-full bg-white/10 text-gray-300 text-xs font-medium">Standard Protein Content</div>
+                                )}
+                            </div>
+
+                            {food.station && (
+                                <div>
+                                    <p className="text-xs font-medium text-gray-300 uppercase">Station</p>
+                                    <p className="text-sm text-gray-200">{food.station}</p>
+                                </div>
+                            )}
+
+                            {food.description && (
+                                <div>
+                                    <p className="text-sm text-gray-300 leading-relaxed">{food.description}</p>
+                                </div>
                             )}
                         </div>
-                        {food.description && <p className="mt-3 text-gray-300">{food.description}</p>}
                     </div>
                 )}
             </div>

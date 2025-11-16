@@ -16,7 +16,7 @@ export function Steast() {
     const dietaryRestrictions = [
         { label: "Vegan", value: "vegan" },
         { label: "Vegetarian", value: "vegetarian" },
-        { label: "🥚 High Protein", value: "high_protein" },
+        { label: "Good Source of Protein", value: "high_protein" },
     ];
 
     const fetchMenu = async () => {
@@ -24,15 +24,35 @@ export function Steast() {
         try {
             const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
 
-            const { data: locations, error: locError } = await supabase
+            // Try today's data first, fall back to most recent date if empty
+            let dateToUse = today;
+            let { data: locations, error: locError } = await supabase
                 .from("locations")
                 .select("*")
-                .eq("date", today);
+                .eq("date", dateToUse);
+
+            console.debug("Steast.fetchMenu: locations result (initial):", { dateToUse, locations, locError });
 
             if (locError) throw locError;
             if (!locations || locations.length === 0) {
-                setMenuItems([]);
-                return;
+                const { data: latestLocs, error: latestErr } = await supabase
+                    .from("locations")
+                    .select("*")
+                    .order("date", { ascending: false })
+                    .limit(1);
+                console.debug("Steast.fetchMenu: locations fallback (latest):", { latestLocs, latestErr });
+                if (latestErr) throw latestErr;
+                if (!latestLocs || latestLocs.length === 0) {
+                    setMenuItems([]);
+                    setStations([]);
+                    return;
+                }
+                dateToUse = latestLocs[0].date;
+                const res = await supabase.from("locations").select("*").eq("date", dateToUse);
+                locations = res.data;
+                locError = res.error;
+                console.debug("Steast.fetchMenu: locations after fallback fetch:", { dateToUse, locations, locError });
+                if (locError) throw locError;
             }
 
             const normalize = (s) => String(s || "").toLowerCase().replace(/\s+/g, "-");
@@ -47,6 +67,7 @@ export function Steast() {
             });
             if (!targetLocation) {
                 setMenuItems([]);
+                setStations([]);
                 return;
             }
 
@@ -54,13 +75,16 @@ export function Steast() {
                 .from("periods")
                 .select("*")
                 .eq("location_id", targetLocation.id)
-                .eq("date", today);
+                .eq("date", dateToUse);
+
+            console.debug("Steast.fetchMenu: periods result:", { targetLocationId: targetLocation.id, dateToUse, periods, periodError });
 
             if (periodError) throw periodError;
 
             const targetPeriod = (periods || []).find((p) => p.name.toLowerCase().includes(meal.toLowerCase()));
             if (!targetPeriod) {
                 setMenuItems([]);
+                setStations([]);
                 return;
             }
 
@@ -68,20 +92,17 @@ export function Steast() {
                 .from("stations")
                 .select("*")
                 .eq("period_id", targetPeriod.id)
-                .eq("date", today);
+                .eq("date", dateToUse);
+
+            console.debug("Steast.fetchMenu: stations result:", { targetPeriodId: targetPeriod.id, dateToUse, stationsRows, stationsError });
 
             if (stationsError) throw stationsError;
 
-            // Convert stations to format with label and value
-            const stationOptions = (stationsRows || []).map((s) => ({
-                label: s.name,
-                value: s.id,
-            }));
+            const stationOptions = (stationsRows || []).map((s) => ({ label: s.name, value: s.id }));
             setStations(stationOptions);
 
             let stationIds = (stationsRows || []).map((s) => s.id);
             if (selectedStation) {
-                // selectedStation now has value as the ID
                 const matched = stationsRows.find((s) => s.id === selectedStation.value);
                 if (matched) stationIds = [matched.id];
                 else stationIds = [];
@@ -92,15 +113,10 @@ export function Steast() {
                 return;
             }
 
-            let query = supabase.from("menu_items").select("*").in("station_id", stationIds).eq("date", today);
-
-            if (selectedDietaryRestriction) {
-                const val = selectedDietaryRestriction.value.toLowerCase();
-                if (val === "vegan") query = query.eq("is_vegan", true);
-                if (val === "vegetarian") query = query.eq("is_vegetarian", true);
-            }
+            let query = supabase.from("menu_items").select("*").in("station_id", stationIds).eq("date", dateToUse);
 
             const { data: items, error: itemsError } = await query;
+            console.debug("Steast.fetchMenu: menu_items result:", { dateToUse, stationIds, items, itemsError });
             if (itemsError) throw itemsError;
 
             if (!items || items.length === 0) {
@@ -108,84 +124,88 @@ export function Steast() {
                 return;
             }
 
-            // Items already have calories, is_high_protein flag, etc.
-            // Comprehensive high-protein detection logic
             const normalizedItems = items.map((i) => {
-                // Comprehensive high-protein detection logic
                 let isHighProteinByName = false;
                 let isHighProteinByCalories = false;
-                
+
                 const itemNameLower = (i.name || '').toLowerCase();
                 const calories = i.calories || 0;
                 const portion = (i.portion || '').toLowerCase();
-                
-                // 1. EXPLICIT MEAT/PROTEIN ITEMS (highest confidence)
-                const meatKeywords = [
-                    'chicken', 'turkey', 'beef', 'pork', 'pepperoni', 'fish', 'salmon', 'tuna', 'shrimp', 'steak',
-                    'lamb', 'duck', 'ham', 'bacon', 'sausage', 'meatball', 'grilled meat', 'herb roasted', 'braised',
-                    'roasted chicken', 'turkey breast', 'ground beef'
-                ];
-                
-                // 2. LEGUME/PLANT PROTEINS
-                const plantProteinKeywords = [
-                    'egg', 'tofu', 'tempeh', 'seitan', 'lentil', 'chickpea', 'black bean', 'kidney bean', 'pinto bean', 'edamame'
-                ];
-                
-                // 3. LOW PROTEIN / EXCLUSIONS (overrides everything)
+
+                const meatKeywords = ['chicken', 'turkey', 'beef', 'pork', 'pepperoni', 'fish', 'salmon', 'tuna', 'shrimp', 'steak', 'lamb', 'duck', 'ham', 'bacon', 'sausage', 'meatball'];
+                const plantProteinKeywords = ['egg', 'tofu', 'tempeh', 'seitan', 'lentil', 'chickpea', 'black bean', 'kidney bean', 'pinto bean', 'edamame'];
                 const lowProteinExclusions = ['veggie pizza', 'cheese pizza', 'bread', 'rice', 'pasta', 'noodle', 'salad', 'sides', 'garnish', 'spice', 'sauce', 'dressing'];
-                
-                // Check exclusions first
+
                 const isExcluded = lowProteinExclusions.some(exclusion => itemNameLower.includes(exclusion));
-                
+
                 if (!isExcluded) {
-                    // Check for explicit meat
                     isHighProteinByName = meatKeywords.some(keyword => itemNameLower.includes(keyword));
-                    
-                    // Check for plant proteins
-                    if (!isHighProteinByName) {
-                        isHighProteinByName = plantProteinKeywords.some(keyword => itemNameLower.includes(keyword));
-                    }
-                    
-                    // CALORIE-BASED HEURISTIC for pizzas and complex dishes
-                    // Pizza typically has ~250-300 cal per slice for veggie, 300-350 for meat
-                    // If it's called "pizza" and has 300+ cal, it's likely meat pizza
-                    if (!isHighProteinByName && itemNameLower.includes('pizza')) {
-                        if (calories >= 300) {
-                            isHighProteinByCalories = true;
-                        }
-                    }
-                    
-                    // For items with large portions (like "1 pie", "whole", "large")
-                    // and high calories (800+), likely high protein
-                    if (!isHighProteinByName && !isHighProteinByCalories) {
-                        const largePortions = ['1 pie', 'whole', 'large', 'serving'];
-                        const hasLargePortion = largePortions.some(p => portion.includes(p));
-                        if (hasLargePortion && calories >= 800) {
-                            isHighProteinByCalories = true;
-                        }
-                    }
+                    if (!isHighProteinByName) isHighProteinByName = plantProteinKeywords.some(keyword => itemNameLower.includes(keyword));
+
+                    if (!isHighProteinByName && itemNameLower.includes('pizza') && calories >= 300) isHighProteinByCalories = true;
+
+                    const largePortions = ['1 pie', 'whole', 'large', 'serving'];
+                    const hasLargePortion = largePortions.some(p => portion.includes(p));
+                    if (!isHighProteinByName && !isHighProteinByCalories && hasLargePortion && calories >= 800) isHighProteinByCalories = true;
                 }
-                
+
                 return {
                     id: i.id,
                     name: i.name,
                     calories: i.calories,
                     portion: i.portion,
                     is_high_protein: i.is_high_protein || isHighProteinByName || isHighProteinByCalories,
+                    is_vegan: i.is_vegan || false,
+                    is_vegetarian: i.is_vegetarian || false,
                     description: i.description || null,
                 };
             });
 
-            // If user selected High Protein, apply client-side filter
+            const veganKeywords = ['vegan', 'plant-based', 'tofu', 'tempeh', 'seitan', 'edamame', 'chickpea', 'lentil', 'black bean', 'hummus', 'falafel', 'veggie', 'vegetable', 'salad', 'grilled vegetable'];
+            const vegetarianKeywords = ['vegetarian', 'cheese', 'egg', 'paneer', 'omelet', 'omelette', 'quiche', 'ricotta', 'mozzarella', 'feta', 'caprese', 'vegetable', 'veggie', 'salad', 'pasta', 'rice', 'beans'];
+            const meatKeywords = ['chicken', 'turkey', 'beef', 'pork', 'pepperoni', 'fish', 'salmon', 'tuna', 'shrimp', 'steak', 'lamb', 'duck', 'ham', 'bacon', 'sausage', 'meatball', 'ground beef'];
+            const dairyKeywords = ['cheese', 'milk', 'butter', 'yogurt', 'cream', 'mozzarella', 'cheddar', 'feta', 'parmesan', 'ricotta'];
+            const eggKeywords = ['egg', 'omelet', 'omelette', 'scrambled', 'fried egg'];
+
+            const containsAny = (text, list) => list.some(k => text.includes(k));
+
+            const isVeganHeuristic = (item) => {
+                const name = (item.name || '').toLowerCase();
+                const desc = (item.description || '').toLowerCase();
+                if (containsAny(name, veganKeywords) || containsAny(desc, veganKeywords)) return true;
+                const combined = name + ' ' + desc;
+                return !containsAny(combined, meatKeywords) && !containsAny(combined, dairyKeywords) && !containsAny(combined, eggKeywords);
+            };
+
+            const isVegetarianHeuristic = (item) => {
+                const name = (item.name || '').toLowerCase();
+                const desc = (item.description || '').toLowerCase();
+                const combined = name + ' ' + desc;
+                if (containsAny(name, vegetarianKeywords) || containsAny(desc, vegetarianKeywords)) return true;
+                return !containsAny(combined, meatKeywords);
+            };
+
             let finalItems = normalizedItems || [];
-            if (selectedDietaryRestriction && selectedDietaryRestriction.value === 'high_protein') {
-                finalItems = finalItems.filter((i) => i.is_high_protein);
+            if (selectedDietaryRestriction) {
+                const val = selectedDietaryRestriction.value;
+                if (val === 'vegan') {
+                    finalItems = finalItems.filter(i => i.is_vegan || isVeganHeuristic(i));
+                }
+                if (val === 'vegetarian') {
+                    finalItems = finalItems.filter(i => i.is_vegetarian || isVegetarianHeuristic(i) || i.is_vegan);
+                }
+                if (val === 'high_protein') {
+                    finalItems = finalItems.filter((i) => i.is_high_protein);
+                }
             }
+
+            console.debug('Steast.fetchMenu: items before/after dietary filter', { total: normalizedItems.length, finalCount: finalItems.length, selectedDietaryRestriction: selectedDietaryRestriction?.value });
 
             setMenuItems(finalItems);
         } catch (err) {
             console.error("Error fetching menu:", err.message || err);
             setMenuItems([]);
+            setStations([]);
         } finally {
             setIsLoading(false);
         }
@@ -297,6 +317,7 @@ export function Steast() {
                                             is_high_protein: food.is_high_protein,
                                             portion: food.portion,
                                             description: food.description || null,
+                                            station: food.station || null,
                                         }}
                                     />
                                 ))
