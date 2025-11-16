@@ -40,14 +40,13 @@ export const MenuCard = ({ food }) => {
                                 <div className="font-semibold text-white">{food.portion ?? 'N/A'}</div>
                             </div>
                         </div>
-                        <div className="mt-3">
-                            {food.is_high_protein ? (
-                                <div className="px-3 py-2 inline-block rounded-full bg-amber-500/30 text-amber-200 text-xs font-semibold">🥚 Good Source of Protein</div>
-                            ) : (
-                                <div className="px-3 py-2 inline-block rounded-full bg-white/10 text-gray-300 text-xs font-medium">Standard Protein Content</div>
-                            )}
-                        </div>
-                        {food.description && <p className="mt-3 text-gray-300">{food.description}</p>}
+
+                        {/* Additional details if available */}
+                        {food.description && (
+                            <div className="pt-4 border-t border-gray-200">
+                                <p className="text-sm text-gray-600 leading-relaxed">{food.description}</p>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
