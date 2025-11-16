@@ -41,6 +41,14 @@ export const MenuCard = ({ food }) => {
                             </div>
                         </div>
 
+                        {/* Station info if available */}
+                        {food.station && (
+                            <div className="pt-4 border-t border-gray-200">
+                                <p className="text-xs font-medium text-gray-500 uppercase mb-1">Station</p>
+                                <p className="text-sm text-gray-700">{food.station}</p>
+                            </div>
+                        )}
+
                         {/* Additional details if available */}
                         {food.description && (
                             <div className="pt-4 border-t border-gray-200">
