@@ -70,7 +70,7 @@ export function DiningHall() {
         try {
             const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
 
-            const { data: locations, error: locError } = await supabase
+            let { data: locations, error: locError } = await supabase
                 .from("locations")
                 .select("*")
                 .eq("date", today);
