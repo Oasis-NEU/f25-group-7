@@ -1,8 +1,55 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import FoodBackground from "../Components/background";
 import MenuCard from "../Components/MenuCard";
 import { useParams } from "react-router-dom";
 import { supabase } from "../config/supabaseClient";
+
+// Helper function to check if any keyword is in the text
+const containsAny = (text, keywords) => {
+    const lowerText = text.toLowerCase();
+    return keywords.some(keyword => lowerText.includes(keyword));
+};
+
+// Vegan heuristic: no animal products
+const isVeganHeuristic = (item) => {
+    const name = item.name || "";
+    const description = item.description || "";
+
+    // Keywords that indicate non-vegan
+    const nonVeganKeywords = [
+        'chicken', 'turkey', 'beef', 'pork', 'fish', 'salmon', 'tuna', 'shrimp', 'lamb', 'duck', 'ham', 'bacon', 'sausage',
+        'meat', 'steak', 'pepperoni', 'meatball', 'egg', 'eggs', 'cheese', 'milk', 'cream', 'butter', 'yogurt', 'honey',
+        'gelatin', 'whey', 'casein', 'lactose', 'dairy', 'mayo', 'mayonnaise'
+    ];
+
+    // If it contains any non-vegan keyword, it's not vegan
+    if (containsAny(name + " " + description, nonVeganKeywords)) {
+        return false;
+    }
+
+    // Additional check: if it's explicitly marked as vegan in DB
+    return item.is_vegan || false;
+};
+
+// Vegetarian heuristic: no meat, but dairy/eggs ok
+const isVegetarianHeuristic = (item) => {
+    const name = item.name || "";
+    const description = item.description || "";
+
+    // Meat keywords
+    const meatKeywords = [
+        'chicken', 'turkey', 'beef', 'pork', 'fish', 'salmon', 'tuna', 'shrimp', 'lamb', 'duck', 'ham', 'bacon', 'sausage',
+        'meat', 'steak', 'pepperoni', 'meatball', 'grilled meat', 'herb roasted', 'braised', 'roasted chicken', 'turkey breast', 'ground beef'
+    ];
+
+    // If it contains meat, it's not vegetarian
+    if (containsAny(name + " " + description, meatKeywords)) {
+        return false;
+    }
+
+    // Additional check: if it's explicitly marked as vegetarian in DB
+    return item.is_vegetarian || false;
+};
 
 export function DiningHall() {
     const [selectedStation, setSelectedStation] = useState(null);
@@ -15,6 +62,7 @@ export function DiningHall() {
     const dietaryRestrictions = [
         { label: "Vegan", value: "vegan" },
         { label: "Vegetarian", value: "vegetarian" },
+        { label: "High Protein", value: "high-protein" },
     ];
 
     const fetchMenu = async () => {
@@ -28,6 +76,23 @@ export function DiningHall() {
                 .eq("date", today);
 
             if (locError) throw locError;
+
+            // If no data for today, try the latest available date
+            if (!locations || locations.length === 0) {
+                console.debug("No data for today, trying latest date");
+                const { data: latestLocations, error: latestError } = await supabase
+                    .from("locations")
+                    .select("*")
+                    .order("date", { ascending: false })
+                    .limit(10);
+
+                if (latestError) throw latestError;
+                locations = latestLocations;
+                if (locations && locations.length > 0) {
+                    console.debug("Using data from date:", locations[0].date);
+                }
+            }
+
             if (!locations || locations.length === 0) {
                 setMenuItems([]);
                 setStations([]);
@@ -187,7 +252,30 @@ export function DiningHall() {
 
     useEffect(() => {
         fetchMenu();
-    }, [hall, meal, selectedStation?.value, selectedDietaryRestriction?.value]);
+    }, [hall, meal, selectedStation?.value]);
+
+    const filteredMenuItems = useMemo(() => {
+        let items = menuItems;
+
+        // Filter by station
+        if (selectedStation) {
+            // Assuming menuItems have station info, but since we don't, perhaps filter by station name or something.
+            // For now, skip station filter as it's not implemented in normalization.
+        }
+
+        // Filter by dietary restriction
+        if (selectedDietaryRestriction) {
+            if (selectedDietaryRestriction.value === 'vegan') {
+                items = items.filter(item => isVeganHeuristic(item));
+            } else if (selectedDietaryRestriction.value === 'vegetarian') {
+                items = items.filter(item => isVegetarianHeuristic(item));
+            } else if (selectedDietaryRestriction.value === 'high-protein') {
+                items = items.filter(item => item.is_high_protein);
+            }
+        }
+
+        return items;
+    }, [menuItems, selectedStation, selectedDietaryRestriction]);
 
     return (
         <div className="min-h-screen bg-linear-to-br from-black via-gray-900 to-black relative overflow-hidden">
@@ -224,7 +312,7 @@ export function DiningHall() {
                             </div>
 
                             <div className="flex items-center gap-3">
-                                <div className="bg-white/6 text-white px-3 py-2 rounded-full text-sm font-medium">{menuItems.length} Items</div>
+                                <div className="bg-white/6 text-white px-3 py-2 rounded-full text-sm font-medium">{filteredMenuItems.length} Items</div>
                                 <button 
                                     onClick={fetchMenu}
                                     disabled={isLoading}
@@ -278,13 +366,13 @@ export function DiningHall() {
 
                         {/* Menu cards */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {menuItems.length === 0 ? (
+                            {filteredMenuItems.length === 0 ? (
                                 <div className="col-span-full bg-white/5 rounded-lg p-8 text-center border border-white/5">
                                     <p className="text-white text-lg">No menu items found for this selection.</p>
                                     <p className="text-gray-300 mt-2 text-sm">Try changing station or dietary filters, or run the scraper to populate today's data.</p>
                                 </div>
                             ) : (
-                                menuItems.map((food) => (
+                                filteredMenuItems.map((food) => (
                                     <MenuCard
                                         key={food.id}
                                         food={{

@@ -10,6 +10,7 @@ import { NotFound } from "./pages/NotFound";
 import DiningHall from "./pages/DiningHall";
 import Navbar from "./functions/Navbar";
 import SetPass from "./pages/setPass";
+import About from "./pages/About";
 function App() {
   return (
     <Router>
@@ -23,6 +24,7 @@ function App() {
         <Route path="/home" element={<Home/>}></Route>
         <Route path="/vote" element={<Vote/>} />
         <Route path="/menu/:hall/:meal" element={<DiningHall/>} />
+        <Route path="/about" element={<About/>} />
         <Route path= "*" element={<NotFound/>}></Route>
         
       </Routes>
