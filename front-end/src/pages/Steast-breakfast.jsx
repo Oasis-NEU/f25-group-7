@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import FoodBackground from "../Components/background";
 import PillNav from "../Components/Pill-Selection";
 import MenuCard from "../Components/MenuCard";

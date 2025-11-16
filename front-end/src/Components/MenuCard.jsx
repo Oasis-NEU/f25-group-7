@@ -50,15 +50,15 @@ export const MenuCard = ({ food }) => {
                             </div>
 
                             {food.station && (
-                                <div>
-                                    <p className="text-xs font-medium text-gray-300 uppercase">Station</p>
-                                    <p className="text-sm text-gray-200">{food.station}</p>
+                                <div className="pt-4 border-t border-gray-200">
+                                    <p className="text-xs font-medium text-gray-500 uppercase mb-1">Station</p>
+                                    <p className="text-sm text-gray-700">{food.station}</p>
                                 </div>
                             )}
 
                             {food.description && (
-                                <div>
-                                    <p className="text-sm text-gray-300 leading-relaxed">{food.description}</p>
+                                <div className="pt-4 border-t border-gray-200">
+                                    <p className="text-sm text-gray-600 leading-relaxed">{food.description}</p>
                                 </div>
                             )}
                         </div>
