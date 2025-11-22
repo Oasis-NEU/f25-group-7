@@ -22,10 +22,14 @@
         "tailwind-merge": "^3.4.0"
     },
     "type": "module",
+    "engines": {
+        "node": "18.x"
+    },
     "scripts": {
         "dev": "concurrently \"cd backend-folder && node index.js\" \"cd front-end && npm run dev\"",
         "dev:backend": "cd backend-folder && node index.js",
-        "dev:frontend": "cd front-end && npm run dev"
+        "dev:frontend": "cd front-end && npm run dev",
+        "build": "npm --prefix front-end run build"
     },
     "devDependencies": {
         "concurrently": "^8.2.0"
