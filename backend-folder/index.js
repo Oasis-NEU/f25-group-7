@@ -19,15 +19,13 @@ const supabase = createClient(
 // Helper function to map URL hall slugs to database location names
 function mapHallSlugToLocationName(hallSlug) {
   const hallMap = {
-    'stetson-east': 'Stetson East',
-    'stetson-west': 'Stetson West',
-    'international-village': 'International Village',
-    'iv': 'International Village',
-    'steast': 'Stetson East',
-    '60-belvidere': '60 Belvidere',
-    'belvidere': '60 Belvidere'
+    'stetson-east': 'The Eatery at Stetson East',
+    'steast':       'The Eatery at Stetson East',
+    'international-village': 'United Table at International Village',
+    'iv':           'United Table at International Village',
+    '60-belvidere': 'Campus Roots at 60 Belvidere',
+    'belvidere':    'Campus Roots at 60 Belvidere',
   };
-  
   return hallMap[hallSlug.toLowerCase()] || hallSlug;
 }
 

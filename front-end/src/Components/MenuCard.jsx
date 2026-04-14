@@ -1,67 +1,97 @@
 import React, { useState } from 'react';
 
+const badgeStyle = {
+    backgroundColor: 'rgba(255,255,255,0.09)',
+    border: '1px solid rgba(255,255,255,0.14)',
+    color: 'rgba(255,255,255,0.82)',
+};
+const badgeClass = "px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap";
+
 export const MenuCard = ({ food }) => {
     const [isExpanded, setIsExpanded] = useState(false);
 
     return (
         <div
             onClick={() => setIsExpanded(!isExpanded)}
-            className={`relative rounded-2xl overflow-hidden transform transition-all duration-300 cursor-pointer shadow-lg hover:scale-105`}
+            className="relative rounded-2xl overflow-hidden transform transition-all duration-300 cursor-pointer shadow-lg hover:scale-[1.03] hover:shadow-xl"
         >
-            <div className="absolute inset-0 bg-linear-to-br from-indigo-700 via-pink-600 to-red-500 opacity-20 -z-10" />
-            <div className="bg-linear-to-tr from-white/6 to-white/3 backdrop-blur-sm border border-white/6 rounded-2xl p-5 h-full flex flex-col justify-between">
+            {/* subtle card glow */}
+            <div className="absolute inset-0 bg-linear-to-br from-white via-white to-white opacity-15 -z-10" />
+            <div className="bg-white/4 backdrop-blur-sm border border-white/6 rounded-2xl p-5 h-full flex flex-col justify-between gap-3">
+
+                {/* Name + station */}
                 <div>
-                    <h3 className="text-lg font-semibold text-white leading-tight mb-2">{food.name}</h3>
-                    {food.description && <p className="text-sm text-gray-300 mb-3">{food.description}</p>}
+                    <h3 className="text-base font-semibold text-white leading-snug">
+                        {food.name}
+                    </h3>
+                    {food.station && (
+                        <p className="text-[11px] text-white/35 uppercase tracking-widest mt-1">
+                            {food.station}
+                        </p>
+                    )}
                 </div>
 
-                <div className="mt-4 flex items-center justify-between">
-                    <div className="flex gap-2 items-center flex-wrap">
-                        <div className="px-3 py-1 rounded-full bg-white/6 text-white text-xs font-medium">{food.calories ?? 'N/A'} cal</div>
-                        {food.is_high_protein ? (
-                            <div className="px-3 py-1 rounded-full bg-amber-500/30 text-amber-200 text-xs font-semibold">🥚 High Protein</div>
-                        ) : (
-                            <div className="px-3 py-1 rounded-full bg-white/10 text-gray-300 text-xs font-medium">Standard</div>
-                        )}
-                    </div>
+                {/* Badges row */}
+                <div className="flex flex-wrap gap-1.5 items-center">
+                    <span className={badgeClass} style={badgeStyle}>
+                        {food.calories != null ? `${food.calories} cal` : '— cal'}
+                    </span>
 
-                    <div className="text-sm text-gray-200">{food.portion ?? 'Portion N/A'}</div>
+                    {food.is_vegan && (
+                        <span className={badgeClass} style={badgeStyle}>🌱 Vegan</span>
+                    )}
+                    {!food.is_vegan && food.is_vegetarian && (
+                        <span className={badgeClass} style={badgeStyle}>🥦 Vegetarian</span>
+                    )}
+                    {food.is_high_protein && (
+                        <span className={badgeClass} style={badgeStyle}>💪 High Protein</span>
+                    )}
                 </div>
 
+                {/* Portion + expand hint */}
+                <div className="flex items-center justify-between text-[11px] text-white/35">
+                    <span>{food.portion ?? ''}</span>
+                    <span className="transition-transform duration-200" style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                        ▾
+                    </span>
+                </div>
+
+                {/* Expanded nutrition panel */}
                 {isExpanded && (
-                    <div className="mt-4 pt-4 border-t border-white/6 text-sm text-gray-200">
-                        <div className="grid grid-cols-2 gap-4">
+                    <div className="pt-3 border-t border-white/8 space-y-3 animate-[fadeIn_0.15s_ease]">
+                        <div className="grid grid-cols-2 gap-3">
                             <div>
-                                <div className="text-xs text-gray-300 uppercase">Calories</div>
-                                <div className="font-semibold text-white">{food.calories ?? 'N/A'}</div>
+                                <p className="text-[10px] text-white/30 uppercase tracking-wide mb-0.5">Calories</p>
+                                <p className="text-sm font-semibold text-white">{food.calories ?? '—'}</p>
                             </div>
                             <div>
-                                <div className="text-xs text-gray-300 uppercase">Portion</div>
-                                <div className="font-semibold text-white">{food.portion ?? 'N/A'}</div>
+                                <p className="text-[10px] text-white/30 uppercase tracking-wide mb-0.5">Portion</p>
+                                <p className="text-sm font-semibold text-white">{food.portion ?? '—'}</p>
                             </div>
-                        </div>
-                        <div className="mt-3 flex flex-col gap-2">
-                            <div>
-                                {food.is_high_protein ? (
-                                    <div className="px-3 py-2 inline-block rounded-full bg-amber-500/30 text-amber-200 text-xs font-semibold">🥚 Good Source of Protein</div>
-                                ) : (
-                                    <div className="px-3 py-2 inline-block rounded-full bg-white/10 text-gray-300 text-xs font-medium">Standard Protein Content</div>
-                                )}
-                            </div>
-
+                            {food.protein && (
+                                <div>
+                                    <p className="text-[10px] text-white/30 uppercase tracking-wide mb-0.5">Protein</p>
+                                    <p className="text-sm font-semibold text-white">{food.protein}</p>
+                                </div>
+                            )}
                             {food.station && (
-                                <div className="pt-4 border-t border-gray-200">
-                                    <p className="text-xs font-medium text-gray-500 uppercase mb-1">Station</p>
-                                    <p className="text-sm text-gray-700">{food.station}</p>
-                                </div>
-                            )}
-
-                            {food.description && (
-                                <div className="pt-4 border-t border-gray-200">
-                                    <p className="text-sm text-gray-600 leading-relaxed">{food.description}</p>
+                                <div>
+                                    <p className="text-[10px] text-white/30 uppercase tracking-wide mb-0.5">Station</p>
+                                    <p className="text-sm font-semibold text-white">{food.station}</p>
                                 </div>
                             )}
                         </div>
+
+                        {/* Full badge row in expanded state */}
+                        <div className="flex flex-wrap gap-1.5">
+                            {food.is_vegan && <span className={badgeClass} style={badgeStyle}>🌱 Vegan</span>}
+                            {!food.is_vegan && food.is_vegetarian && <span className={badgeClass} style={badgeStyle}>🥦 Vegetarian</span>}
+                            {food.is_high_protein && <span className={badgeClass} style={badgeStyle}>💪 High Protein</span>}
+                        </div>
+
+                        {food.description && (
+                            <p className="text-xs text-white/50 leading-relaxed">{food.description}</p>
+                        )}
                     </div>
                 )}
             </div>

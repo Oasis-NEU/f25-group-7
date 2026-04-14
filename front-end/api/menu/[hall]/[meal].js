@@ -1,0 +1,166 @@
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+function mapHall(slug) {
+  return {
+    'stetson-east': 'The Eatery at Stetson East',
+    'steast':       'The Eatery at Stetson East',
+    'international-village': 'United Table at International Village',
+    'iv':           'United Table at International Village',
+    '60-belvidere': 'Campus Roots at 60 Belvidere',
+    'belvidere':    'Campus Roots at 60 Belvidere',
+  }[slug.toLowerCase()] ?? slug;
+}
+
+function mapMeal(slug) {
+  return {
+    'breakfast': 'Breakfast',
+    'lunch': 'Lunch',
+    'dinner': 'Dinner',
+    'brunch': 'Brunch',
+  }[slug.toLowerCase()] ?? slug;
+}
+
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+
+  const { hall, meal } = req.query;
+  const locationName = mapHall(hall);
+  const periodName = mapMeal(meal);
+
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+  let dateToUse = today;
+
+  // 1. Find location rows for today
+  let { data: locations, error: locErr } = await supabase
+    .from('locations')
+    .select('id, name, date')
+    .eq('name', locationName)
+    .eq('date', today);
+
+  if (locErr) return res.status(500).json({ error: locErr.message });
+
+  // Fallback to latest available date if no data for today
+  if (!locations || locations.length === 0) {
+    const { data: latest } = await supabase
+      .from('locations')
+      .select('id, name, date')
+      .eq('name', locationName)
+      .order('date', { ascending: false })
+      .limit(10);
+    if (latest && latest.length > 0) {
+      locations = latest;
+      dateToUse = latest[0].date;
+    }
+  }
+
+  if (!locations || locations.length === 0) {
+    return res.status(404).json({
+      error: 'No menu data found',
+      message: `No data found for ${locationName}. The database may need to be populated — run /api/scrape.`,
+    });
+  }
+
+  // 2. Find a location+period that has stations for dateToUse
+  let location = null;
+  let period = null;
+
+  for (const loc of locations) {
+    const { data: periods } = await supabase
+      .from('periods')
+      .select('id, name, date')
+      .eq('location_id', loc.id)
+      .eq('name', periodName)
+      .eq('date', dateToUse);
+
+    if (!periods || periods.length === 0) continue;
+
+    for (const p of periods) {
+      const { data: stationCheck } = await supabase
+        .from('stations')
+        .select('id')
+        .eq('period_id', p.id)
+        .eq('date', dateToUse)
+        .limit(1);
+
+      if (stationCheck && stationCheck.length > 0) {
+        location = loc;
+        period = p;
+        break;
+      }
+    }
+    if (period) break;
+  }
+
+  if (!period) {
+    return res.status(404).json({
+      error: 'Period not found',
+      message: `No ${periodName} menu found for ${locationName} on ${dateToUse}.`,
+    });
+  }
+
+  // 3. Get stations
+  const { data: stations, error: stErr } = await supabase
+    .from('stations')
+    .select('id, name')
+    .eq('period_id', period.id)
+    .eq('date', dateToUse);
+
+  if (stErr) return res.status(500).json({ error: stErr.message });
+  if (!stations || stations.length === 0) {
+    return res.json({ location: location.name, period: period.name, date: dateToUse, items: [], totalItems: 0 });
+  }
+
+  const stationIds = stations.map(s => s.id);
+
+  // 4. Get menu items with nutrients
+  let { data: items, error: itemErr } = await supabase
+    .from('menu_items')
+    .select(`
+      id, name, calories, portion, is_vegetarian, is_vegan, is_high_protein, station_id,
+      stations!inner(id, name),
+      nutrients(name, value, uom, value_numeric)
+    `)
+    .eq('date', dateToUse)
+    .in('station_id', stationIds);
+
+  // Fallback without join if the relation select fails
+  if (itemErr || !items || items.length === 0) {
+    const { data: simple } = await supabase
+      .from('menu_items')
+      .select('id, name, calories, portion, is_vegetarian, is_vegan, is_high_protein, station_id')
+      .eq('date', dateToUse)
+      .in('station_id', stationIds);
+    items = simple || [];
+  }
+
+  const stationMap = Object.fromEntries(stations.map(s => [s.id, s.name]));
+
+  const formatted = items.map(item => {
+    const proteinNutrient = item.nutrients?.find(n => n.name?.toLowerCase().includes('protein'));
+    return {
+      id: item.id,
+      name: item.name,
+      calories: item.calories ?? null,
+      portion: item.portion ?? null,
+      station: item.stations?.name ?? stationMap[item.station_id] ?? null,
+      protein: proteinNutrient ? `${proteinNutrient.value} ${proteinNutrient.uom || ''}`.trim() : null,
+      isVegetarian: item.is_vegetarian ?? false,
+      isVegan: item.is_vegan ?? false,
+      isHighProtein: item.is_high_protein ?? false,
+      description: null,
+    };
+  });
+
+  return res.json({
+    location: location.name,
+    period: period.name,
+    date: dateToUse,
+    items: formatted,
+    totalItems: formatted.length,
+  });
+}

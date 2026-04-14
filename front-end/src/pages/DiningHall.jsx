@@ -7,50 +7,58 @@ export function DiningHall() {
     const [menuItems, setMenuItems] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [displayDate, setDisplayDate] = useState(null);
-    const [selectedDietaryRestriction, setSelectedDietaryRestriction] = useState(null);
+    const [activeFilters, setActiveFilters] = useState(new Set());
     const { hall = "stetson-east", meal = "breakfast" } = useParams();
 
     const dietaryRestrictions = [
         { label: "Vegan", value: "vegan" },
         { label: "Vegetarian", value: "vegetarian" },
+        { label: "Non-Veg", value: "non-veg" },
         { label: "High Protein", value: "high-protein" },
     ];
 
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+    const toggleFilter = (value) => {
+        setActiveFilters(prev => {
+            const next = new Set(prev);
+            if (next.has(value)) next.delete(value);
+            else next.add(value);
+            return next;
+        });
+    };
 
     const fetchMenu = async () => {
         setIsLoading(true);
         try {
-            const res = await fetch(`${backendUrl}/api/menu/${hall}/${meal}`);
+            const res = await fetch(`/api/menu/${hall}/${meal}`);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const json = await res.json();
-            // backend returns { location, period, date, items }
-            // Normalize items and compute high-protein when missing
             const normalized = (json.items || []).map(i => {
-                const name = i.name || i.title || '';
-                const calories = i.calories || 0;
-                const portion = (i.portion || '').toLowerCase();
-                let isHigh = i.isHighProtein || i.is_high_protein || false;
-
-                // heuristic when backend doesn't provide it
-                if (!isHigh) {
-                    const meatKeywords = ['chicken','turkey','beef','pork','salmon','tuna','shrimp','steak','ham','bacon','sausage','egg','tofu','tempeh'];
-                    const nameLower = name.toLowerCase();
-                    if (meatKeywords.some(k => nameLower.includes(k))) isHigh = true;
-                    if (!isHigh && calories >= 400) isHigh = true;
+                // Parse protein grams from the nutrient string the API returns (e.g. "15 g" → 15)
+                let proteinGrams = null;
+                if (i.protein) {
+                    const match = String(i.protein).match(/(\d+(?:\.\d+)?)/);
+                    if (match) proteinGrams = parseFloat(match[1]);
                 }
+
+                // High protein: use DineOnCampus's own "Good Source of Protein" flag,
+                // or fall back to ≥15 g per serving (FDA threshold for a "good source")
+                const isHigh = Boolean(i.isHighProtein || i.is_high_protein)
+                    || (proteinGrams !== null && proteinGrams >= 15);
 
                 return {
                     id: i.id,
-                    name,
-                    calories: i.calories || null,
-                    portion: i.portion || null,
-                    is_high_protein: Boolean(isHigh),
-                    description: i.description || null,
-                    raw: i
+                    name: i.name || i.title || '',
+                    calories: i.calories ?? null,
+                    portion: i.portion ?? null,
+                    station: i.station ?? null,
+                    protein: i.protein ?? null,
+                    is_high_protein: isHigh,
+                    is_vegetarian: Boolean(i.isVegetarian || i.is_vegetarian),
+                    is_vegan: Boolean(i.isVegan || i.is_vegan),
+                    description: i.description ?? null,
                 };
             });
-            setMenuItems(normalized || []);
+            setMenuItems(normalized);
             setDisplayDate(json.date || null);
         } catch (err) {
             console.error('fetchMenu error', err);
@@ -72,7 +80,7 @@ export function DiningHall() {
                             <div>
                                 <h1 className="text-4xl md:text-5xl font-extrabold text-white leading-tight">
                                     {(hall || "").split("-").map((s) => s[0]?.toUpperCase() + s.slice(1)).join(" ")}
-                                    <span className="text-red-400"> — {meal && meal[0]?.toUpperCase() + meal.slice(1)}</span>
+                                    <span className="text-red-400"> {meal && meal[0]?.toUpperCase() + meal.slice(1)}</span>
                                 </h1>
                                 <p className="text-sm text-gray-300 mt-2"></p>
                                 {displayDate && (
@@ -83,12 +91,12 @@ export function DiningHall() {
                             <div className="flex items-center gap-3">
                                 <div className="bg-white/6 text-white px-3 py-2 rounded-full text-sm font-medium">{menuItems.length} Items</div>
 
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
                                     {dietaryRestrictions.map(d => (
                                         <button
                                             key={d.value}
-                                            onClick={() => setSelectedDietaryRestriction(selectedDietaryRestriction === d.value ? null : d.value)}
-                                            className={`px-3 py-1 rounded-full text-sm font-medium transition ${selectedDietaryRestriction === d.value ? 'bg-red-500 text-white' : 'bg-white/6 text-white'}`}
+                                            onClick={() => toggleFilter(d.value)}
+                                            className={`px-3 py-1 rounded-full text-sm font-medium transition ${activeFilters.has(d.value) ? 'bg-red-500 text-white' : 'bg-white/6 text-white'}`}
                                         >
                                             {d.label}
                                         </button>
@@ -106,7 +114,7 @@ export function DiningHall() {
                         </div>
 
                         {/** Filter items in-memory for a clean UI */}
-                        <ItemGrid menuItems={menuItems} selectedDietaryRestriction={selectedDietaryRestriction} />
+                        <ItemGrid menuItems={menuItems} activeFilters={activeFilters} />
                     </div>
                 </main>
             </div>
@@ -116,32 +124,35 @@ export function DiningHall() {
 
 export default DiningHall;
 
-function ItemGrid({ menuItems, selectedDietaryRestriction }) {
+function ItemGrid({ menuItems, activeFilters }) {
     const filteredMenuItems = useMemo(() => {
-        if (!selectedDietaryRestriction) return menuItems;
+        if (activeFilters.size === 0) return menuItems;
         return menuItems.filter(item => {
             const name = (item.name || '').toLowerCase();
-            if (selectedDietaryRestriction === 'high-protein') return Boolean(item.is_high_protein);
-            if (selectedDietaryRestriction === 'vegan') {
-                const raw = item.raw || {};
-                if (raw.is_vegan) return true;
-                const veganKeywords = ['vegan','plant-based','tofu','seitan','tempeh','salad','fruit','vegetable'];
-                return veganKeywords.some(k => name.includes(k));
-            }
-            if (selectedDietaryRestriction === 'vegetarian') {
-                const raw = item.raw || {};
-                if (raw.is_vegetarian) return true;
-                const vegKeywords = ['cheese','egg','vegetarian','paneer','tofu','salad','mushroom'];
-                return vegKeywords.some(k => name.includes(k));
+            // Item must pass ALL active filters (AND logic)
+            for (const filter of activeFilters) {
+                if (filter === 'high-protein') {
+                    if (!item.is_high_protein) return false;
+                } else if (filter === 'vegan') {
+                    const veganKeywords = ['vegan','plant-based','tofu','seitan','tempeh'];
+                    if (!item.is_vegan && !veganKeywords.some(k => name.includes(k))) return false;
+                } else if (filter === 'vegetarian') {
+                    const vegKeywords = ['cheese','egg','vegetarian','paneer','tofu','mushroom'];
+                    if (!item.is_vegetarian && !item.is_vegan && !vegKeywords.some(k => name.includes(k))) return false;
+                } else if (filter === 'non-veg') {
+                    const nonVegKeywords = ['chicken','turkey','beef','pork','salmon','tuna','shrimp','steak','ham','bacon','sausage','lamb','fish','crab','lobster','clam','oyster','anchovy','pepperoni'];
+                    const isNonVeg = !item.is_vegan && !item.is_vegetarian && nonVegKeywords.some(k => name.includes(k));
+                    if (!isNonVeg) return false;
+                }
             }
             return true;
         });
-    }, [menuItems, selectedDietaryRestriction]);
+    }, [menuItems, activeFilters]);
 
     return (
         <div>
             <div className="text-sm text-gray-300 mb-3">Showing <span className="text-white font-medium">{filteredMenuItems.length}</span> of <span className="text-white font-medium">{menuItems.length}</span> items</div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
                 {filteredMenuItems.length === 0 ? (
                     <div className="col-span-full bg-white/5 rounded-lg p-8 text-center border border-white/5">
                         <p className="text-white text-lg">No menu items found.</p>
@@ -154,9 +165,13 @@ function ItemGrid({ menuItems, selectedDietaryRestriction }) {
                             food={{
                                 name: food.name,
                                 calories: food.calories,
-                                is_high_protein: food.is_high_protein,
                                 portion: food.portion,
-                                description: food.description || null,
+                                station: food.station,
+                                protein: food.protein,
+                                is_high_protein: food.is_high_protein,
+                                is_vegetarian: food.is_vegetarian,
+                                is_vegan: food.is_vegan,
+                                description: food.description,
                             }}
                         />
                     ))
