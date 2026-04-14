@@ -15,6 +15,8 @@ on:
 jobs:
   scrape:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     defaults:
       run:
         working-directory: backend-folder
@@ -31,12 +33,14 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Install Chromium (for Puppeteer)
-        run: npx puppeteer browsers install chrome
+      - name: Install Chrome
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y google-chrome-stable
+          google-chrome-stable --version
 
       - name: Run menu scraper
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          # puppeteer auto-detects the installed chrome, no path needed
         run: node run-scrape.js

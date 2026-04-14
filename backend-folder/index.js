@@ -66,7 +66,7 @@ app.get('/api/menu/:hall/:meal', async (req, res) => {
     let today = new Date().toLocaleDateString('en-CA', {
       timeZone: 'America/New_York'
     });
-    // dateToUse will be the date we actually query (fallback to latest available if today's missing)
+    // dateToUse will be the date we actually query (fallback to latest available if today's missing when the actual date is different from the stored date format or if today's data is missing)
     let dateToUse = today;
     
     console.log('Querying location:', locationName, 'date:', today);
