@@ -1,13 +1,23 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import FoodBackground from "../Components/background";
 import RotatingText from "../Components/Rotating text";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { supabase } from "../config/supabaseClient";
 
 export const Home = () => {
     const navigate = useNavigate();
     const [selectedTime, setSelectedTime] = useState(null);
     const [selectedLocation, setSelectedLocation] = useState(null);
     const [error, setError] = useState('');
+    const [user, setUser] = useState(null);
+
+    useEffect(() => {
+        supabase.auth.getUser().then(({ data }) => setUser(data?.user ?? null));
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+            setUser(session?.user ?? null);
+        });
+        return () => subscription?.unsubscribe();
+    }, []);
 
     const handleFindMenu = () => {
         if (!selectedTime || !selectedLocation) {
@@ -125,6 +135,75 @@ export const Home = () => {
                     Find the Menu
                 </button>
             </div>
+
+            {/* Unauthenticated upsell */}
+            {!user && (
+                <section className="relative z-10 bg-linear-to-b from-black to-red-950/30 border-t border-white/10 px-4 py-16 flex flex-col items-center text-center">
+                    <p className="text-white/50 text-xs uppercase tracking-widest mb-3 font-semibold">Members only</p>
+                    <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3">There's more waiting for you</h2>
+                    <p className="text-white/60 text-base sm:text-lg max-w-xl mb-10">
+                        Create a free account to unlock calorie tracking, meal voting, and personalised nutrition insights.
+                    </p>
+
+                    <div className="flex flex-col sm:flex-row gap-5 mb-12 w-full max-w-2xl justify-center">
+                        {[
+                            {
+                                icon: (
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                ),
+                                title: "Calorie Tracker",
+                                desc: "Log every meal and monitor your daily nutrition goals.",
+                            },
+                            {
+                                icon: (
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                        d="M5 13l4 4L19 7" />
+                                ),
+                                title: "Vote on Meals",
+                                desc: "Rate dishes and help shape what gets served on campus.",
+                            },
+                            {
+                                icon: (
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                        d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 110 20A10 10 0 0112 2z" />
+                                ),
+                                title: "Nutrition Insights",
+                                desc: "See protein, carbs, fats and more for every item on the menu.",
+                            },
+                        ].map(({ icon, title, desc }) => (
+                            <div key={title} className="flex-1 bg-white/5 border border-white/10 rounded-2xl p-6 text-left relative overflow-hidden">
+                                <div className="absolute top-3 right-3 bg-red-500/20 border border-red-500/30 rounded-full p-1">
+                                    <svg className="w-3.5 h-3.5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                    </svg>
+                                </div>
+                                <svg className="w-7 h-7 text-red-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    {icon}
+                                </svg>
+                                <h3 className="text-white font-bold text-lg mb-1">{title}</h3>
+                                <p className="text-white/50 text-sm leading-relaxed">{desc}</p>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-3">
+                        <Link
+                            to="/signup"
+                            className="px-8 py-3 bg-red-500 hover:bg-red-600 text-white font-semibold text-lg rounded-full transition-colors shadow-lg shadow-red-500/25"
+                        >
+                            Create free account
+                        </Link>
+                        <Link
+                            to="/login"
+                            className="px-8 py-3 bg-white/10 hover:bg-white/20 text-white font-semibold text-lg rounded-full transition-colors border border-white/15"
+                        >
+                            Sign in
+                        </Link>
+                    </div>
+                </section>
+            )}
         </div>
     );
 };
