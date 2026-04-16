@@ -27,7 +27,7 @@ export const Home = () => {
         },
         {
             name: "International Village",
-            des: "Global cuisines and rotating menus — Latin Kitchen, Spice Bowl, Sushi, Pomodoro, and more.",
+            des: "Global cuisines and rotating menus; Latin Kitchen, Spice Bowl, Sushi, Pomodoro, and more.",
         },
         {
             name: "60 Belvidere",
@@ -47,7 +47,7 @@ export const Home = () => {
                     className="w-28 h-28 sm:w-40 sm:h-40 md:w-56 md:h-56 mb-4 mx-auto drop-shadow-lg"
                 />
                 <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold text-red-400 mb-4">
-                    Welcome To NU RATE-ON
+                    Welcome To NU Dining
                 </h1>
                 <div className="flex items-baseline justify-center gap-3 flex-wrap mt-2">
                     <p className="text-2xl sm:text-3xl md:text-5xl text-gray-300">Eating is</p>
@@ -64,9 +64,6 @@ export const Home = () => {
                         rotationInterval={2000}
                     />
                 </div>
-                <p className="text-white/60 font-medium mt-10 text-sm sm:text-base">
-                    Scroll down to select your dining hall and meal
-                </p>
             </section>
 
             {/* Dining hall cards */}

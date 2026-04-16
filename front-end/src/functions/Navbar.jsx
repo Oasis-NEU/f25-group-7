@@ -95,7 +95,7 @@ export default function Navbar() {
               group-hover:drop-shadow-[0_0_10px_rgba(239,68,68,0.75)]"
           />
           <span className="text-xl font-bold text-white transition-colors duration-300 group-hover:text-red-400">
-            NU RATE-ON
+            NU Dining
           </span>
         </Link>
 
