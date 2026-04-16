@@ -20,7 +20,7 @@ const halls = [
     name: 'International Village',
     subtitle: 'United Table at International Village',
     description:
-      'Global cuisines and rotating menus — Latin Kitchen, Spice Bowl, Sushi, Pomodoro, and more. Open every day.',
+      'Global cuisines and rotating menus; Latin Kitchen, Spice Bowl, Sushi, Pomodoro, and more. Open every day.',
     week: [
       { day: 'Mon – Thu', slots: ['8:00 AM – 10:00 PM'] },
       { day: 'Fri',       slots: ['8:00 AM – 9:00 PM']  },
@@ -31,7 +31,7 @@ const halls = [
     name: '60 Belvidere',
     subtitle: 'Campus Roots at 60 Belvidere',
     description:
-      'Smaller neighbourhood hall near Symphony Hall. Serves breakfast and dinner only — no lunch service. Closed Friday and Saturday.',
+      'Smaller neighbourhood hall near Symphony Hall. Serves breakfast and dinner only; no lunch service. Closed Friday and Saturday.',
     week: [
       { day: 'Mon – Thu', slots: ['8:00 AM – 10:00 AM', '4:00 PM – 8:00 PM'], note: 'No lunch service' },
       { day: 'Fri – Sat', slots: [],                                           closed: true },

@@ -44,7 +44,7 @@ export default async function handler(req, res) {
 
   if (locErr) return res.status(500).json({ error: locErr.message });
 
-  // Fallback to latest available date if no data for today
+  // Fallback 1: no location rows at all for today
   if (!locations || locations.length === 0) {
     const { data: latest } = await supabase
       .from('locations')
@@ -55,6 +55,29 @@ export default async function handler(req, res) {
     if (latest && latest.length > 0) {
       locations = latest;
       dateToUse = latest[0].date;
+    }
+  }
+
+  // Fallback 2: today has location rows but the scrape left no periods
+  // (partial failure — inserts locations then errors out before periods/items)
+  if (locations && locations.length > 0 && dateToUse === today) {
+    const { data: hasPeriods } = await supabase
+      .from('periods')
+      .select('id')
+      .in('location_id', locations.map(l => l.id))
+      .limit(1);
+    if (!hasPeriods || hasPeriods.length === 0) {
+      const { data: prevLocs } = await supabase
+        .from('locations')
+        .select('id, name, date')
+        .eq('name', locationName)
+        .neq('date', today)
+        .order('date', { ascending: false })
+        .limit(10);
+      if (prevLocs && prevLocs.length > 0) {
+        locations = prevLocs;
+        dateToUse = prevLocs[0].date;
+      }
     }
   }
 
@@ -141,17 +164,26 @@ export default async function handler(req, res) {
   const stationMap = Object.fromEntries(stations.map(s => [s.id, s.name]));
 
   const formatted = items.map(item => {
-    const proteinNutrient = item.nutrients?.find(n => n.name?.toLowerCase().includes('protein'));
+    const nuts = item.nutrients || [];
+    const find = (keyword) => {
+      const n = nuts.find(n => n.name?.toLowerCase().includes(keyword));
+      return n ? `${n.value}${n.uom ? ' ' + n.uom : ''}`.trim() : null;
+    };
     return {
       id: item.id,
       name: item.name,
       calories: item.calories ?? null,
       portion: item.portion ?? null,
       station: item.stations?.name ?? stationMap[item.station_id] ?? null,
-      protein: proteinNutrient ? `${proteinNutrient.value} ${proteinNutrient.uom || ''}`.trim() : null,
       isVegetarian: item.is_vegetarian ?? false,
       isVegan: item.is_vegan ?? false,
       isHighProtein: item.is_high_protein ?? false,
+      protein: find('protein'),
+      fat: find('total fat'),
+      carbs: find('total carbohydrate'),
+      fiber: find('dietary fiber'),
+      sodium: find('sodium'),
+      sugar: find('total sugar'),
       description: null,
     };
   });

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import FoodBackground from "../Components/background";
 import { supabase } from '../config/supabaseClient';
@@ -36,16 +36,15 @@ function Login() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-cover bg-center bg-no-repeat bg-[#000000]"
-    >
+    <div className="flex flex-col items-center justify-center min-h-screen bg-[#000000] px-4 py-12">
     <FoodBackground/>
-      <div className=' absolute top-10 flex flex-row items-center mb-8 text-center animate-pulse'>
+      <div className="flex flex-row items-center mb-6 text-center animate-pulse">
         <img
         src="/logo__7_-removebg-preview.png"
         alt='NU Rate-ON Logo'
-        className='w-50 h-50 mb-4 drop-shadow-md'/> 
+        className='w-24 h-24 sm:w-32 sm:h-32 drop-shadow-md'/>
       </div>
-      <div className="bg-white/20 backdrop-blur-md rounded-xl shadow-lg p-8 w-full max-w-md">
+      <div className="bg-white/20 backdrop-blur-md rounded-xl shadow-lg p-6 sm:p-8 w-full max-w-md">
         <h2 className="text-3xl place-self-center-safe font-bold mb-6 text-red-400">Login</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">

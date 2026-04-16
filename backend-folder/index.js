@@ -79,7 +79,7 @@ app.get('/api/menu/:hall/:meal', async (req, res) => {
       .eq('date', today);
     console.log('Found locations for today:', Array.isArray(possibleLocations) ? possibleLocations.length : 0, 'error:', locListError);
 
-    // If no locations for today, fall back to the latest available date for this location name
+    // Fallback 1: no location rows at all for today
     if ((!possibleLocations || possibleLocations.length === 0) && !locListError) {
       const { data: latestLocations, error: latestLocErr } = await supabase
         .from('locations')
@@ -91,6 +91,31 @@ app.get('/api/menu/:hall/:meal', async (req, res) => {
         possibleLocations = latestLocations;
         dateToUse = latestLocations[0].date;
         console.log('Falling back to latest date for location:', dateToUse);
+      }
+    }
+
+    // Fallback 2: today has location rows but the scrape left no periods
+    // (partial failure — inserts locations then errors before periods/items)
+    if (possibleLocations && possibleLocations.length > 0 && dateToUse === today) {
+      const { data: hasPeriods } = await supabase
+        .from('periods')
+        .select('id')
+        .in('location_id', possibleLocations.map(l => l.id))
+        .limit(1);
+      if (!hasPeriods || hasPeriods.length === 0) {
+        console.log('Today has locations but no periods — falling back to previous date');
+        const { data: prevLocs } = await supabase
+          .from('locations')
+          .select('id, name, date')
+          .eq('name', locationName)
+          .neq('date', today)
+          .order('date', { ascending: false })
+          .limit(10);
+        if (prevLocs && prevLocs.length > 0) {
+          possibleLocations = prevLocs;
+          dateToUse = prevLocs[0].date;
+          console.log('Falling back to date:', dateToUse);
+        }
       }
     }
 
@@ -255,22 +280,28 @@ app.get('/api/menu/:hall/:meal', async (req, res) => {
     
     // Format the response
     const formattedItems = (menuItems || []).map(item => {
-      // Extract protein from nutrients
-      const proteinNutrient = item.nutrients?.find(n => 
-        n.name.toLowerCase().includes('protein')
-      );
-      
+      const nuts = item.nutrients || [];
+      const find = (keyword) => {
+        const n = nuts.find(n => n.name.toLowerCase().includes(keyword));
+        return n ? `${n.value}${n.uom ? ' ' + n.uom : ''}`.trim() : null;
+      };
+
       return {
         id: item.id,
         name: item.name,
         calories: item.calories || null,
-        protein: proteinNutrient ? `${proteinNutrient.value} ${proteinNutrient.uom || ''}`.trim() : null,
         portion: item.portion || null,
         station: item.stations?.name || null,
         isVegetarian: item.is_vegetarian,
         isVegan: item.is_vegan,
         isHighProtein: item.is_high_protein,
-        description: null // Can be added if you store descriptions
+        protein: find('protein'),
+        fat: find('total fat'),
+        carbs: find('total carbohydrate'),
+        fiber: find('dietary fiber'),
+        sodium: find('sodium'),
+        sugar: find('total sugar'),
+        description: null,
       };
     });
     

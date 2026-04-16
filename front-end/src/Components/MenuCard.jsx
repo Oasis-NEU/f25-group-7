@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 const badgeStyle = {
     backgroundColor: 'rgba(255,255,255,0.09)',
@@ -6,6 +6,13 @@ const badgeStyle = {
     color: 'rgba(255,255,255,0.82)',
 };
 const badgeClass = "px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap";
+
+const NutrientRow = ({ label, value }) => value ? (
+    <div>
+        <p className="text-[10px] text-white/30 uppercase tracking-wide mb-0.5">{label}</p>
+        <p className="text-sm font-semibold text-white">{value}</p>
+    </div>
+) : null;
 
 export const MenuCard = ({ food }) => {
     const [isExpanded, setIsExpanded] = useState(false);
@@ -36,14 +43,16 @@ export const MenuCard = ({ food }) => {
                     <span className={badgeClass} style={badgeStyle}>
                         {food.calories != null ? `${food.calories} cal` : '— cal'}
                     </span>
-
+                    {food.protein && (
+                        <span className={badgeClass} style={badgeStyle}>💪 {food.protein} protein</span>
+                    )}
                     {food.is_vegan && (
                         <span className={badgeClass} style={badgeStyle}>🌱 Vegan</span>
                     )}
                     {!food.is_vegan && food.is_vegetarian && (
                         <span className={badgeClass} style={badgeStyle}>🥦 Vegetarian</span>
                     )}
-                    {food.is_high_protein && (
+                    {food.is_high_protein && !food.protein && (
                         <span className={badgeClass} style={badgeStyle}>💪 High Protein</span>
                     )}
                 </div>
@@ -59,30 +68,19 @@ export const MenuCard = ({ food }) => {
                 {/* Expanded nutrition panel */}
                 {isExpanded && (
                     <div className="pt-3 border-t border-white/8 space-y-3 animate-[fadeIn_0.15s_ease]">
-                        <div className="grid grid-cols-2 gap-3">
-                            <div>
-                                <p className="text-[10px] text-white/30 uppercase tracking-wide mb-0.5">Calories</p>
-                                <p className="text-sm font-semibold text-white">{food.calories ?? '—'}</p>
-                            </div>
-                            <div>
-                                <p className="text-[10px] text-white/30 uppercase tracking-wide mb-0.5">Portion</p>
-                                <p className="text-sm font-semibold text-white">{food.portion ?? '—'}</p>
-                            </div>
-                            {food.protein && (
-                                <div>
-                                    <p className="text-[10px] text-white/30 uppercase tracking-wide mb-0.5">Protein</p>
-                                    <p className="text-sm font-semibold text-white">{food.protein}</p>
-                                </div>
-                            )}
-                            {food.station && (
-                                <div>
-                                    <p className="text-[10px] text-white/30 uppercase tracking-wide mb-0.5">Station</p>
-                                    <p className="text-sm font-semibold text-white">{food.station}</p>
-                                </div>
-                            )}
+                        <div className="grid grid-cols-3 gap-3">
+                            <NutrientRow label="Calories" value={food.calories} />
+                            <NutrientRow label="Protein" value={food.protein} />
+                            <NutrientRow label="Total Fat" value={food.fat} />
+                            <NutrientRow label="Carbs" value={food.carbs} />
+                            <NutrientRow label="Fiber" value={food.fiber} />
+                            <NutrientRow label="Sugar" value={food.sugar} />
+                            <NutrientRow label="Sodium" value={food.sodium} />
+                            <NutrientRow label="Portion" value={food.portion} />
+                            <NutrientRow label="Station" value={food.station} />
                         </div>
 
-                        {/* Full badge row in expanded state */}
+                        {/* Dietary badges */}
                         <div className="flex flex-wrap gap-1.5">
                             {food.is_vegan && <span className={badgeClass} style={badgeStyle}>🌱 Vegan</span>}
                             {!food.is_vegan && food.is_vegetarian && <span className={badgeClass} style={badgeStyle}>🥦 Vegetarian</span>}

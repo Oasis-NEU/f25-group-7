@@ -1,44 +1,43 @@
 import { supabase } from "../config/supabaseClient";
 
-// Function to cast a vote for 'steast' or 'iv'
-export async function castVote(location) {
-  if (location !== "steast" && location !== "iv") {
-    console.error("Invalid location");
-    return;
-  }
+const todayStr = () => new Date().toISOString().substring(0, 10);
 
-  try {
-    const today = new Date();
-    const formattedDate = today.toISOString().substring(0, 10);
+/** Insert one vote row. Returns the Supabase response (check .error). */
+export async function castVote(userId, mealPeriod, location) {
+  return supabase.from("votes").insert({
+    user_id:     userId,
+    vote_date:   todayStr(),
+    meal_period: mealPeriod,
+    location,
+  });
+}
 
-    // Fetch the row for today
-    const { data: row, error: fetchError } = await supabase
-      .from("steast_vs_iv")
-      .select()
-      .eq("date", formattedDate)
-      .single();
+/** Delete a vote row (undo). Returns the Supabase response. */
+export async function undoVote(userId, mealPeriod) {
+  return supabase
+    .from("votes")
+    .delete()
+    .eq("user_id",     userId)
+    .eq("vote_date",   todayStr())
+    .eq("meal_period", mealPeriod);
+}
 
-    if (fetchError) {
-      console.error("Error fetching votes:", fetchError);
-      return;
-    }
+/** All-time cumulative totals across every user and every day. */
+export async function getVoteTotals() {
+  const { data } = await supabase.from("votes").select("location");
+  if (!data) return { steast: 0, iv: 0 };
+  return {
+    steast: data.filter(r => r.location === "steast").length,
+    iv:     data.filter(r => r.location === "iv").length,
+  };
+}
 
-    // Get current vote count for this location
-    const votes = row[location] || 0;
-
-    // Increment votes
-    const { data: updatedRow, error: updateError } = await supabase
-      .from("steast_vs_iv")
-      .update({ [location]: votes + 1 })
-      .eq("date", formattedDate)
-      .select();
-
-    if (updateError) {
-      console.error("Error updating votes:", updateError);
-    } else {
-      console.log("Votes updated:", updatedRow);
-    }
-  } catch (err) {
-    console.error("Unexpected error:", err);
-  }
+/** Meal periods this user has already voted on today (array of strings). */
+export async function getUserVotedPeriods(userId) {
+  const { data } = await supabase
+    .from("votes")
+    .select("meal_period")
+    .eq("user_id",   userId)
+    .eq("vote_date", todayStr());
+  return (data || []).map(r => r.meal_period);
 }

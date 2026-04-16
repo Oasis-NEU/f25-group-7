@@ -9,7 +9,7 @@ name: Daily Menu Scrape
 on:
   schedule:
     - cron: '0 5 * * *'    # midnight ET — primary
-    - cron: '0 11 * * *'   # 6 AM ET   — backup before breakfast
+    - cron: '0 7 * * *'    # 3 AM EDT / 2 AM EST — backup before breakfast, ~2 hrs after primary
   workflow_dispatch:         # manual trigger from GitHub Actions UI
 
 jobs:

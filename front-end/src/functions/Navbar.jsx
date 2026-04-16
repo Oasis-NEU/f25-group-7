@@ -104,6 +104,7 @@ export default function Navbar() {
           <NavLink to="/home">Home</NavLink>
           <NavLink to="/about">About</NavLink>
           {user && <NavLink to="/vote">Vote</NavLink>}
+          {user && <NavLink to="/tracker">Tracker</NavLink>}
         </nav>
 
         {/* ── Right side: user widget + mobile hamburger ── */}
@@ -162,6 +163,16 @@ export default function Navbar() {
                         </svg>
                         Vote
                       </Link>
+                      <Link
+                        to="/tracker"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm text-white/70 hover:text-white hover:bg-white/8 transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        Tracker
+                      </Link>
                     </div>
                     <div className="p-2 border-t border-white/8">
                       <button
@@ -211,7 +222,8 @@ export default function Navbar() {
       <div className={`mobile-menu md:hidden ${open ? "open" : ""}`}>
         <NavLink to="/home"  onClick={() => setOpen(false)}>Home</NavLink>
         <NavLink to="/about" onClick={() => setOpen(false)}>About</NavLink>
-        {user && <NavLink to="/vote" onClick={() => setOpen(false)}>Vote</NavLink>}
+        {user && <NavLink to="/vote"    onClick={() => setOpen(false)}>Vote</NavLink>}
+        {user && <NavLink to="/tracker" onClick={() => setOpen(false)}>Tracker</NavLink>}
       </div>
     </header>
   );

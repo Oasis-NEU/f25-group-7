@@ -68,12 +68,20 @@ async function main() {
   for (const loc of LOCATIONS) {
     console.log(`\n→ ${loc.name}`);
 
-    // Insert location row
-    const { data: dbLoc, error: locErr } = await supabase
-      .from('locations')
-      .insert({ original_id: loc.id, name: loc.name, date: today })
-      .select().single();
-    if (locErr) { console.error(`  location insert error: ${locErr.message}`); continue; }
+    // Insert location row (or reuse existing one if this is a retry)
+    let dbLoc;
+    const { data: existingLoc } = await supabase
+      .from('locations').select('id').eq('original_id', loc.id).eq('date', today).maybeSingle();
+    if (existingLoc) {
+      dbLoc = existingLoc;
+    } else {
+      const { data: newLoc, error: locErr } = await supabase
+        .from('locations')
+        .insert({ original_id: loc.id, name: loc.name, date: today })
+        .select().single();
+      if (locErr) { console.error(`  location insert error: ${locErr.message}`); continue; }
+      dbLoc = newLoc;
+    }
 
     // Get periods for this location
     let periodsData;
@@ -90,11 +98,19 @@ async function main() {
     for (const period of periods) {
       if (period.name === 'Everyday') continue; // skip non-meal period
 
-      const { data: dbPeriod, error: perErr } = await supabase
-        .from('periods')
-        .insert({ original_id: period.id, location_id: dbLoc.id, name: period.name, date: today })
-        .select().single();
-      if (perErr) { console.error(`  period insert error: ${perErr.message}`); continue; }
+      let dbPeriod;
+      const { data: existingPeriod } = await supabase
+        .from('periods').select('id').eq('original_id', period.id).eq('location_id', dbLoc.id).eq('date', today).maybeSingle();
+      if (existingPeriod) {
+        dbPeriod = existingPeriod;
+      } else {
+        const { data: newPeriod, error: perErr } = await supabase
+          .from('periods')
+          .insert({ original_id: period.id, location_id: dbLoc.id, name: period.name, date: today })
+          .select().single();
+        if (perErr) { console.error(`  period insert error: ${perErr.message}`); continue; }
+        dbPeriod = newPeriod;
+      }
 
       // Get full menu for this period
       let menuData;
@@ -108,11 +124,19 @@ async function main() {
       if (!categories.length) { console.log(`  ${period.name}: no categories`); continue; }
 
       for (const cat of categories) {
-        const { data: dbStation, error: stErr } = await supabase
-          .from('stations')
-          .insert({ original_id: cat.id || null, period_id: dbPeriod.id, name: cat.name, date: today })
-          .select().single();
-        if (stErr) { console.error(`  station insert error: ${stErr.message}`); continue; }
+        let dbStation;
+        const { data: existingStation } = await supabase
+          .from('stations').select('id').eq('period_id', dbPeriod.id).eq('name', cat.name).eq('date', today).maybeSingle();
+        if (existingStation) {
+          dbStation = existingStation;
+        } else {
+          const { data: newStation, error: stErr } = await supabase
+            .from('stations')
+            .insert({ original_id: cat.id || null, period_id: dbPeriod.id, name: cat.name, date: today })
+            .select().single();
+          if (stErr) { console.error(`  station insert error: ${stErr.message}`); continue; }
+          dbStation = newStation;
+        }
 
         for (const item of (cat.items || [])) {
           const filters = (item.filters || []).map(f => (typeof f === 'string' ? f : f.name));

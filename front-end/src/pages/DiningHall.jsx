@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import FoodBackground from "../Components/background";
 import MenuCard from "../Components/MenuCard";
 import { useParams } from "react-router-dom";
@@ -8,6 +8,7 @@ export function DiningHall() {
     const [isLoading, setIsLoading] = useState(false);
     const [displayDate, setDisplayDate] = useState(null);
     const [activeFilters, setActiveFilters] = useState(new Set());
+    const [notServed, setNotServed] = useState(false);
     const { hall = "stetson-east", meal = "breakfast" } = useParams();
 
     const dietaryRestrictions = [
@@ -28,8 +29,15 @@ export function DiningHall() {
 
     const fetchMenu = async () => {
         setIsLoading(true);
+        setNotServed(false);
         try {
             const res = await fetch(`/api/menu/${hall}/${meal}`);
+            if (res.status === 404) {
+                setNotServed(true);
+                setMenuItems([]);
+                setDisplayDate(null);
+                return;
+            }
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const json = await res.json();
             const normalized = (json.items || []).map(i => {
@@ -52,6 +60,11 @@ export function DiningHall() {
                     portion: i.portion ?? null,
                     station: i.station ?? null,
                     protein: i.protein ?? null,
+                    fat: i.fat ?? null,
+                    carbs: i.carbs ?? null,
+                    fiber: i.fiber ?? null,
+                    sodium: i.sodium ?? null,
+                    sugar: i.sugar ?? null,
                     is_high_protein: isHigh,
                     is_vegetarian: Boolean(i.isVegetarian || i.is_vegetarian),
                     is_vegan: Boolean(i.isVegan || i.is_vegan),
@@ -76,37 +89,32 @@ export function DiningHall() {
             <div className="relative z-10 flex flex-col min-h-screen">
                 <main className="flex-1 flex flex-col items-center justify-start pt-28 px-6 pb-20 w-full">
                     <div className="w-full max-w-6xl">
-                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                        <div className="flex flex-col gap-3 mb-6">
                             <div>
-                                <h1 className="text-4xl md:text-5xl font-extrabold text-white leading-tight">
+                                <h1 className="text-2xl sm:text-3xl md:text-5xl font-extrabold text-white leading-tight">
                                     {(hall || "").split("-").map((s) => s[0]?.toUpperCase() + s.slice(1)).join(" ")}
                                     <span className="text-red-400"> {meal && meal[0]?.toUpperCase() + meal.slice(1)}</span>
                                 </h1>
-                                <p className="text-sm text-gray-300 mt-2"></p>
                                 {displayDate && (
                                     <p className="text-xs text-gray-400 mt-1">Showing menu for <span className="font-medium text-white">{displayDate}</span>.</p>
                                 )}
                             </div>
 
-                            <div className="flex items-center gap-3">
-                                <div className="bg-white/6 text-white px-3 py-2 rounded-full text-sm font-medium">{menuItems.length} Items</div>
-
-                                <div className="flex items-center gap-2 flex-wrap">
-                                    {dietaryRestrictions.map(d => (
-                                        <button
-                                            key={d.value}
-                                            onClick={() => toggleFilter(d.value)}
-                                            className={`px-3 py-1 rounded-full text-sm font-medium transition ${activeFilters.has(d.value) ? 'bg-red-500 text-white' : 'bg-white/6 text-white'}`}
-                                        >
-                                            {d.label}
-                                        </button>
-                                    ))}
-                                </div>
-
-                                <button 
+                            <div className="flex flex-wrap items-center gap-2">
+                                <div className="bg-white/6 text-white px-3 py-1.5 rounded-full text-sm font-medium shrink-0">{menuItems.length} Items</div>
+                                {dietaryRestrictions.map(d => (
+                                    <button
+                                        key={d.value}
+                                        onClick={() => toggleFilter(d.value)}
+                                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${activeFilters.has(d.value) ? 'bg-red-500 text-white' : 'bg-white/6 text-white'}`}
+                                    >
+                                        {d.label}
+                                    </button>
+                                ))}
+                                <button
                                     onClick={fetchMenu}
                                     disabled={isLoading}
-                                    className={`px-4 py-2 rounded-full text-sm font-semibold transition transform ${isLoading ? 'bg-red-600 opacity-75 scale-95' : 'bg-red-500 hover:bg-red-600 hover:brightness-95 active:scale-95'}`}
+                                    className={`px-4 py-1.5 rounded-full text-sm font-semibold transition transform shrink-0 ${isLoading ? 'bg-red-600 opacity-75 scale-95' : 'bg-red-500 hover:bg-red-600 active:scale-95'}`}
                                 >
                                     {isLoading ? 'Loading...' : 'Refresh'}
                                 </button>
@@ -114,7 +122,7 @@ export function DiningHall() {
                         </div>
 
                         {/** Filter items in-memory for a clean UI */}
-                        <ItemGrid menuItems={menuItems} activeFilters={activeFilters} />
+                        <ItemGrid menuItems={menuItems} activeFilters={activeFilters} isLoading={isLoading} notServed={notServed} meal={meal} hall={hall} />
                     </div>
                 </main>
             </div>
@@ -124,7 +132,7 @@ export function DiningHall() {
 
 export default DiningHall;
 
-function ItemGrid({ menuItems, activeFilters }) {
+function ItemGrid({ menuItems, activeFilters, isLoading, notServed, meal, hall }) {
     const filteredMenuItems = useMemo(() => {
         if (activeFilters.size === 0) return menuItems;
         return menuItems.filter(item => {
@@ -149,16 +157,40 @@ function ItemGrid({ menuItems, activeFilters }) {
         });
     }, [menuItems, activeFilters]);
 
+    const hallName = (hall || "").split("-").map(s => s[0]?.toUpperCase() + s.slice(1)).join(" ");
+    const mealName = meal ? meal[0].toUpperCase() + meal.slice(1) : "";
+
+    const emptyState = (() => {
+        if (isLoading) return null;
+        if (notServed) return (
+            <div className="col-span-full bg-white/5 rounded-2xl p-10 text-center border border-white/8">
+                <p className="text-4xl mb-4">🍽️</p>
+                <p className="text-white text-xl font-semibold">{mealName} isn't served here today</p>
+                <p className="text-gray-400 mt-2 text-sm">{hallName} doesn't offer {mealName.toLowerCase()} — try checking breakfast or dinner instead.</p>
+            </div>
+        );
+        if (menuItems.length > 0 && filteredMenuItems.length === 0) return (
+            <div className="col-span-full bg-white/5 rounded-2xl p-10 text-center border border-white/8">
+                <p className="text-4xl mb-4">🔍</p>
+                <p className="text-white text-xl font-semibold">No items match your filters</p>
+                <p className="text-gray-400 mt-2 text-sm">Try removing a filter or two to see more options.</p>
+            </div>
+        );
+        if (menuItems.length === 0) return (
+            <div className="col-span-full bg-white/5 rounded-2xl p-10 text-center border border-white/8">
+                <p className="text-4xl mb-4">⏳</p>
+                <p className="text-white text-xl font-semibold">Menu not available yet</p>
+                <p className="text-gray-400 mt-2 text-sm">The menu for {mealName.toLowerCase()} hasn't been posted yet. Check back soon or try refreshing.</p>
+            </div>
+        );
+        return null;
+    })();
+
     return (
         <div>
             <div className="text-sm text-gray-300 mb-3">Showing <span className="text-white font-medium">{filteredMenuItems.length}</span> of <span className="text-white font-medium">{menuItems.length}</span> items</div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
-                {filteredMenuItems.length === 0 ? (
-                    <div className="col-span-full bg-white/5 rounded-lg p-8 text-center border border-white/5">
-                        <p className="text-white text-lg">No menu items found.</p>
-                        <p className="text-gray-300 mt-2 text-sm">Try refreshing or choose a different filter.</p>
-                    </div>
-                ) : (
+                {emptyState ? emptyState : (
                     filteredMenuItems.map((food) => (
                         <MenuCard
                             key={food.id}
@@ -168,6 +200,11 @@ function ItemGrid({ menuItems, activeFilters }) {
                                 portion: food.portion,
                                 station: food.station,
                                 protein: food.protein,
+                                fat: food.fat,
+                                carbs: food.carbs,
+                                fiber: food.fiber,
+                                sodium: food.sodium,
+                                sugar: food.sugar,
                                 is_high_protein: food.is_high_protein,
                                 is_vegetarian: food.is_vegetarian,
                                 is_vegan: food.is_vegan,

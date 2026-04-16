@@ -11,6 +11,7 @@ import DiningHall from "./pages/DiningHall";
 import Navbar from "./functions/Navbar";
 import SetPass from "./pages/setPass";
 import About from "./pages/About";
+import Tracker from "./pages/Tracker";
 function App() {
   return (
     <Router>
@@ -25,6 +26,7 @@ function App() {
         <Route path="/vote" element={<Vote/>} />
         <Route path="/menu/:hall/:meal" element={<DiningHall/>} />
         <Route path="/about" element={<About/>} />
+        <Route path="/tracker" element={<Tracker/>} />
         <Route path= "*" element={<NotFound/>}></Route>
         
       </Routes>
