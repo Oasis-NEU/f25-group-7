@@ -30,9 +30,14 @@ function Signup(){
           },
      });
      if (error){
-          setError(error.message);
-     } else{
-     redirectTo: `${window.location.origin}/login`     } 
+          if (error.message.toLowerCase().includes('rate limit') || error.message.toLowerCase().includes('email rate')) {
+               setError("Too many signups right now. Please wait a few minutes and try again.");
+          } else {
+               setError(error.message);
+          }
+     } else {
+          navigate('/home');
+     }
 } catch (err){
      console.error(err);
      setError("An Error Occurred.")
