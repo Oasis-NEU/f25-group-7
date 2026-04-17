@@ -1,20 +1,41 @@
 name: Daily Menu Scrape
 
-# Triggers the Vercel scrape endpoint which runs from Vercel's IPs (not blocked by DineOnCampus).
-# Vercel also has its own cron at 0 8 * * * as a backup (vercel.json).
+# NOTE: Scheduled runs are disabled — DineOnCampus blocks all cloud/datacenter IPs
+# (GitHub Actions, Vercel) via Cloudflare. The scraper must run from a residential
+# IP. Use the local cron instead:
+#   crontab -e  →  0 1 * * * cd /path/to/f25-group-7/backend-folder && node run-scrape.js >> /tmp/scrape.log 2>&1
+#
+# This workflow is kept for manual one-off runs via the GitHub Actions UI.
 
 on:
-  schedule:
-    - cron: '0 5 * * *'    # midnight ET — primary
-    - cron: '0 7 * * *'    # 2-3 AM ET  — backup before breakfast
   workflow_dispatch:
 
 jobs:
   scrape:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend-folder
+
     steps:
-      - name: Trigger Vercel scrape
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: backend-folder/package-lock.json
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Chrome
         run: |
-          curl -f -X POST https://nu-dining.vercel.app/api/scrape \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            -H "Content-Type: application/json"
+          sudo apt-get update -q
+          sudo apt-get install -y google-chrome-stable
+
+      - name: Run menu scraper
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node run-scrape.js
