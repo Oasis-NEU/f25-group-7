@@ -1,8 +1,8 @@
--- ── Votes ──────────────────────────────────────────────────────────────────────
+-- Votes
 -- One row per vote cast.
--- - Community totals = COUNT(*) by location (all time, cumulative)
--- - User lock       = UNIQUE(user_id, vote_date, meal_period) — DB-enforced,
---                     survives device/browser changes
+-- Community totals are COUNT(*) by location, all time and cumulative.
+-- The one-vote-per-meal lock is UNIQUE(user_id, vote_date, meal_period), so it
+-- is enforced by the database and survives a change of device or browser.
 CREATE TABLE IF NOT EXISTS votes (
   id          UUID     DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id     UUID     NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -18,7 +18,7 @@ ALTER TABLE votes REPLICA IDENTITY FULL;
 
 CREATE INDEX IF NOT EXISTS votes_date_idx ON votes(vote_date);
 
--- ── Row-Level Security ────────────────────────────────────────────────────────
+-- Row-Level Security
 ALTER TABLE votes ENABLE ROW LEVEL SECURITY;
 
 -- Any logged-in user may read all votes (needed for community totals)

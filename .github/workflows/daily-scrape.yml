@@ -1,8 +1,8 @@
 name: Daily Menu Scrape
 
-# NOTE: Scheduled runs are disabled — DineOnCampus blocks all cloud/datacenter IPs
-# (GitHub Actions, Vercel) via Cloudflare. The scraper must run from a residential
-# IP. Use the local cron instead:
+# NOTE: Scheduled runs are disabled. DineOnCampus uses Cloudflare to block
+# cloud and datacenter IPs, which covers both GitHub Actions and Vercel, so the
+# scraper has to run from a residential IP. Use a local cron instead:
 #   crontab -e  →  0 1 * * * cd /path/to/f25-group-7/backend-folder && node run-scrape.js >> /tmp/scrape.log 2>&1
 #
 # This workflow is kept for manual one-off runs via the GitHub Actions UI.

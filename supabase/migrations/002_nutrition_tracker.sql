@@ -1,4 +1,4 @@
--- ── Nutrition Goals ─────────────────────────────────────────────────────────────
+-- Nutrition Goals
 -- One row per user. Upserted on save so no duplicates.
 CREATE TABLE IF NOT EXISTS nutrition_goals (
   id             UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS nutrition_goals (
   UNIQUE(user_id)
 );
 
--- ── Food Logs ────────────────────────────────────────────────────────────────────
+-- Food Logs
 -- One row per logged food item per user per day.
 CREATE TABLE IF NOT EXISTS food_logs (
   id          UUID    DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -31,10 +31,10 @@ CREATE TABLE IF NOT EXISTS food_logs (
   created_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
--- ── Indexes ──────────────────────────────────────────────────────────────────────
+-- Indexes
 CREATE INDEX IF NOT EXISTS food_logs_user_date ON food_logs(user_id, logged_at);
 
--- ── Row-Level Security ───────────────────────────────────────────────────────────
+-- Row-Level Security
 ALTER TABLE nutrition_goals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE food_logs       ENABLE ROW LEVEL SECURITY;
 

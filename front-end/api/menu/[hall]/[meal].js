@@ -1,118 +1,147 @@
-import { createClient } from '@supabase/supabase-js';
+import { ageInDays, getSupabase, today, unwrap, withErrorHandling, HttpError } from '../../_lib/api.js';
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+/**
+ * How far back the fallback will reach when today has not been scraped.
+ * Beyond this the pipeline is broken rather than merely late, and a menu that
+ * old would misinform someone deciding where to eat right now.
+ */
+const MAX_FALLBACK_AGE_DAYS = 14;
 
-function mapHall(slug) {
-  return {
-    'stetson-east': 'The Eatery at Stetson East',
-    'steast':       'The Eatery at Stetson East',
-    'international-village': 'United Table at International Village',
-    'iv':           'United Table at International Village',
-    '60-belvidere': 'Campus Roots at 60 Belvidere',
-    'belvidere':    'Campus Roots at 60 Belvidere',
-  }[slug.toLowerCase()] ?? slug;
+const HALLS = {
+  'stetson-east':          'The Eatery at Stetson East',
+  'steast':                'The Eatery at Stetson East',
+  'international-village': 'United Table at International Village',
+  'iv':                    'United Table at International Village',
+  '60-belvidere':          'Campus Roots at 60 Belvidere',
+  'belvidere':             'Campus Roots at 60 Belvidere',
+};
+
+const MEALS = {
+  breakfast: 'Breakfast',
+  lunch:     'Lunch',
+  dinner:    'Dinner',
+  brunch:    'Brunch',
+};
+
+/** Read a route parameter, rejecting anything that is not a usable string. */
+function param(value, name) {
+  const raw = Array.isArray(value) ? value[0] : value;
+  if (typeof raw !== 'string' || raw.trim() === '') {
+    throw new HttpError(400, `Missing "${name}" in the request path.`);
+  }
+  return raw.trim().toLowerCase();
 }
 
-function mapMeal(slug) {
-  return {
-    'breakfast': 'Breakfast',
-    'lunch': 'Lunch',
-    'dinner': 'Dinner',
-    'brunch': 'Brunch',
-  }[slug.toLowerCase()] ?? slug;
-}
+async function handler(req, res) {
+  const supabase = getSupabase();
 
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const hallSlug = param(req.query?.hall, 'hall');
+  const mealSlug = param(req.query?.meal, 'meal');
+  const locationName = HALLS[hallSlug] ?? hallSlug;
+  const periodName = MEALS[mealSlug] ?? mealSlug;
 
-  const { hall, meal } = req.query;
-  const locationName = mapHall(hall);
-  const periodName = mapMeal(meal);
+  const currentDate = today();
+  let dateToUse = currentDate;
 
-  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-  let dateToUse = today;
-
-  // 1. Find location rows for today
-  let { data: locations, error: locErr } = await supabase
-    .from('locations')
-    .select('id, name, date')
-    .eq('name', locationName)
-    .eq('date', today);
-
-  if (locErr) return res.status(500).json({ error: locErr.message });
-
-  // Fallback 1: no location rows at all for today
-  if (!locations || locations.length === 0) {
-    const { data: latest } = await supabase
+  let locations = unwrap(
+    await supabase
       .from('locations')
       .select('id, name, date')
       .eq('name', locationName)
-      .order('date', { ascending: false })
-      .limit(10);
-    if (latest && latest.length > 0) {
+      .eq('date', currentDate),
+    'looking up locations'
+  );
+
+  // Nothing scraped for today yet, so show the most recent day we do have.
+  if (!locations?.length) {
+    const latest = unwrap(
+      await supabase
+        .from('locations')
+        .select('id, name, date')
+        .eq('name', locationName)
+        .order('date', { ascending: false })
+        .limit(10),
+      'looking up the most recent locations'
+    );
+    if (latest?.length) {
       locations = latest;
       dateToUse = latest[0].date;
     }
   }
 
-  // Fallback 2: today has location rows but the scrape left no periods
-  // (partial failure — inserts locations then errors out before periods/items)
-  if (locations && locations.length > 0 && dateToUse === today) {
-    const { data: hasPeriods } = await supabase
-      .from('periods')
-      .select('id')
-      .in('location_id', locations.map(l => l.id))
-      .limit(1);
-    if (!hasPeriods || hasPeriods.length === 0) {
-      const { data: prevLocs } = await supabase
-        .from('locations')
-        .select('id, name, date')
-        .eq('name', locationName)
-        .neq('date', today)
-        .order('date', { ascending: false })
-        .limit(10);
-      if (prevLocs && prevLocs.length > 0) {
-        locations = prevLocs;
-        dateToUse = prevLocs[0].date;
+  // Today has location rows but no periods, which is what a scrape that died
+  // partway through leaves behind. Prefer the last complete day over an empty page.
+  if (locations?.length && dateToUse === currentDate) {
+    const periods = unwrap(
+      await supabase
+        .from('periods')
+        .select('id')
+        .in('location_id', locations.map(l => l.id))
+        .limit(1),
+      'checking for periods'
+    );
+    if (!periods?.length) {
+      const previous = unwrap(
+        await supabase
+          .from('locations')
+          .select('id, name, date')
+          .eq('name', locationName)
+          .neq('date', currentDate)
+          .order('date', { ascending: false })
+          .limit(10),
+        'looking up previous locations'
+      );
+      if (previous?.length) {
+        locations = previous;
+        dateToUse = previous[0].date;
       }
     }
   }
 
-  if (!locations || locations.length === 0) {
-    return res.status(404).json({
-      error: 'No menu data found',
-      message: `No data found for ${locationName}. The database may need to be populated — run /api/scrape.`,
+  if (!locations?.length) {
+    throw new HttpError(404, `No menu data stored for ${locationName}.`, {
+      code: 'NO_MENU_DATA',
+      hint: 'Run the scraper from a residential IP: cd backend-folder && node run-scrape.js',
     });
   }
 
-  // 2. Find a location+period that has stations for dateToUse
+  const age = ageInDays(dateToUse, currentDate) ?? 0;
+  if (age > MAX_FALLBACK_AGE_DAYS) {
+    throw new HttpError(404, `The newest stored menu for ${locationName} is ${age} days old.`, {
+      code: 'NO_MENU_DATA',
+      ageDays: age,
+      hint: 'The scraper has not run recently: cd backend-folder && node run-scrape.js',
+    });
+  }
+
+  // Pick the first location/period pair that actually has stations attached.
   let location = null;
   let period = null;
 
   for (const loc of locations) {
-    const { data: periods } = await supabase
-      .from('periods')
-      .select('id, name, date')
-      .eq('location_id', loc.id)
-      .eq('name', periodName)
-      .eq('date', dateToUse);
+    const periods = unwrap(
+      await supabase
+        .from('periods')
+        .select('id, name, date')
+        .eq('location_id', loc.id)
+        .eq('name', periodName)
+        .eq('date', dateToUse),
+      'looking up periods'
+    );
 
-    if (!periods || periods.length === 0) continue;
-
-    for (const p of periods) {
-      const { data: stationCheck } = await supabase
-        .from('stations')
-        .select('id')
-        .eq('period_id', p.id)
-        .eq('date', dateToUse)
-        .limit(1);
-
-      if (stationCheck && stationCheck.length > 0) {
+    for (const candidate of periods ?? []) {
+      const stations = unwrap(
+        await supabase
+          .from('stations')
+          .select('id')
+          .eq('period_id', candidate.id)
+          .eq('date', dateToUse)
+          .limit(1),
+        'checking for stations'
+      );
+      if (stations?.length) {
         location = loc;
-        period = p;
+        period = candidate;
         break;
       }
     }
@@ -120,61 +149,77 @@ export default async function handler(req, res) {
   }
 
   if (!period) {
-    return res.status(404).json({
-      error: 'Period not found',
-      message: `No ${periodName} menu found for ${locationName} on ${dateToUse}.`,
+    // Tagged so the client can tell "this hall does not serve this meal" apart
+    // from a 404 produced by a dead route or a proxy in front of us.
+    throw new HttpError(404, `No ${periodName} menu for ${locationName} on ${dateToUse}.`, {
+      code: 'PERIOD_NOT_SERVED',
     });
   }
 
-  // 3. Get stations
-  const { data: stations, error: stErr } = await supabase
-    .from('stations')
-    .select('id, name')
-    .eq('period_id', period.id)
-    .eq('date', dateToUse);
+  const stations = unwrap(
+    await supabase
+      .from('stations')
+      .select('id, name')
+      .eq('period_id', period.id)
+      .eq('date', dateToUse),
+    'fetching stations'
+  );
 
-  if (stErr) return res.status(500).json({ error: stErr.message });
-  if (!stations || stations.length === 0) {
-    return res.json({ location: location.name, period: period.name, date: dateToUse, items: [], totalItems: 0 });
+  if (!stations?.length) {
+    res.status(200).json({
+      location: location.name,
+      period: period.name,
+      date: dateToUse,
+      ageDays: age,
+      items: [],
+      totalItems: 0,
+    });
+    return;
   }
 
   const stationIds = stations.map(s => s.id);
 
-  // 4. Get menu items with nutrients
-  let { data: items, error: itemErr } = await supabase
+  // The embedded select needs the nutrients foreign key to be visible to
+  // PostgREST. If the relationship is missing the query errors, so fall back
+  // to the flat columns rather than failing the whole request.
+  let items;
+  const joined = await supabase
     .from('menu_items')
     .select(`
       id, name, calories, portion, is_vegetarian, is_vegan, is_high_protein, station_id,
-      stations!inner(id, name),
       nutrients(name, value, uom, value_numeric)
     `)
     .eq('date', dateToUse)
     .in('station_id', stationIds);
 
-  // Fallback without join if the relation select fails
-  if (itemErr || !items || items.length === 0) {
-    const { data: simple } = await supabase
-      .from('menu_items')
-      .select('id, name, calories, portion, is_vegetarian, is_vegan, is_high_protein, station_id')
-      .eq('date', dateToUse)
-      .in('station_id', stationIds);
-    items = simple || [];
+  if (joined.error) {
+    console.warn('[api] nutrient join unavailable, using flat columns:', joined.error.message);
+    items = unwrap(
+      await supabase
+        .from('menu_items')
+        .select('id, name, calories, portion, is_vegetarian, is_vegan, is_high_protein, station_id')
+        .eq('date', dateToUse)
+        .in('station_id', stationIds),
+      'fetching menu items'
+    );
+  } else {
+    items = joined.data;
   }
 
-  const stationMap = Object.fromEntries(stations.map(s => [s.id, s.name]));
+  const stationNames = Object.fromEntries(stations.map(s => [s.id, s.name]));
 
-  const formatted = items.map(item => {
-    const nuts = item.nutrients || [];
-    const find = (keyword) => {
-      const n = nuts.find(n => n.name?.toLowerCase().includes(keyword));
-      return n ? `${n.value}${n.uom ? ' ' + n.uom : ''}`.trim() : null;
+  const formatted = (items ?? []).map(item => {
+    const nutrients = item.nutrients ?? [];
+    const find = keyword => {
+      const match = nutrients.find(n => n.name?.toLowerCase().includes(keyword));
+      return match ? `${match.value}${match.uom ? ` ${match.uom}` : ''}`.trim() : null;
     };
     return {
       id: item.id,
       name: item.name,
       calories: item.calories ?? null,
       portion: item.portion ?? null,
-      station: item.stations?.name ?? stationMap[item.station_id] ?? null,
+      station: stationNames[item.station_id] ?? null,
       isVegetarian: item.is_vegetarian ?? false,
       isVegan: item.is_vegan ?? false,
       isHighProtein: item.is_high_protein ?? false,
@@ -188,11 +233,14 @@ export default async function handler(req, res) {
     };
   });
 
-  return res.json({
+  res.status(200).json({
     location: location.name,
     period: period.name,
     date: dateToUse,
+    ageDays: age,
     items: formatted,
     totalItems: formatted.length,
   });
 }
+
+export default withErrorHandling(handler);

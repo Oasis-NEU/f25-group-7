@@ -1,15 +1,14 @@
 import React, { useState } from "react";
-import { useNavigate, Link, useSearchParams } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import FoodBackground from "../Components/background";
 import { supabase } from "../config/supabaseClient";
 
-function setPass() {
+function SetPass() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -120,4 +119,4 @@ function setPass() {
   );
 }
 
-export default setPass;
+export default SetPass;

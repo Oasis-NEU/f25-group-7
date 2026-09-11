@@ -80,7 +80,7 @@ export default function Navbar() {
     <header className="navbar fixed top-0 left-0 right-0 z-[100] backdrop-blur-md bg-black/60 border-b border-white/5">
       <div className="max-w-7xl mx-auto px-4 md:px-6 flex items-center justify-between h-16">
 
-        {/* ── Logo ── always links to /home, hover: scale + red glow */}
+        {/* Logo always links to /home */}
         <Link
           to="/home"
           className="flex items-center gap-3 group shrink-0"
@@ -99,18 +99,18 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* ── Desktop nav links — visible on ALL pages ── */}
+        {/* Desktop nav links, visible on every page */}
         <nav className="hidden md:flex items-center gap-1">
           <NavLink to="/home">Home</NavLink>
-          <NavLink to="/about">About</NavLink>
+          <NavLink to="/hours">Hours</NavLink>
           {user && <NavLink to="/vote">Vote</NavLink>}
           {user && <NavLink to="/tracker">Tracker</NavLink>}
         </nav>
 
-        {/* ── Right side: user widget + mobile hamburger ── */}
+        {/* Right side: user widget and mobile hamburger */}
         <div className="flex items-center gap-2">
 
-          {/* User widget — always rendered (home page & everywhere) */}
+          {/* User widget, rendered on every page */}
           {!loading && (
             user ? (
               <div className="relative" ref={userMenuRef}>
@@ -199,7 +199,7 @@ export default function Navbar() {
             )
           )}
 
-          {/* Mobile hamburger — shown on ALL non-auth pages */}
+          {/* Mobile hamburger, shown on every non-auth page */}
           <button
             className="md:hidden p-2 rounded-lg hover:bg-white/8 text-white/70 hover:text-white transition-colors"
             onClick={() => setOpen(s => !s)}
@@ -218,10 +218,10 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* ── Mobile dropdown — shown on ALL non-auth pages ── */}
+      {/* Mobile dropdown, shown on every non-auth page */}
       <div className={`mobile-menu md:hidden ${open ? "open" : ""}`}>
         <NavLink to="/home"  onClick={() => setOpen(false)}>Home</NavLink>
-        <NavLink to="/about" onClick={() => setOpen(false)}>About</NavLink>
+        <NavLink to="/hours" onClick={() => setOpen(false)}>Hours</NavLink>
         {user && <NavLink to="/vote"    onClick={() => setOpen(false)}>Vote</NavLink>}
         {user && <NavLink to="/tracker" onClick={() => setOpen(false)}>Tracker</NavLink>}
       </div>

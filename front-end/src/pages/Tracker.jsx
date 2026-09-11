@@ -7,8 +7,9 @@ import {
   Tooltip, ResponsiveContainer, ReferenceLine,
 } from 'recharts';
 import { Plus, Trash2, Target, TrendingUp } from 'lucide-react';
+import { campusDate, campusDateOffset, formatCampusDate } from '../functions/campusTime';
 
-// ── SVG Macro Ring ─────────────────────────────────────────────────────────────
+// SVG Macro Ring
 function MacroRing({ label, value, goal, color, unit = 'g', size = 110 }) {
   const stroke = 9;
   const r = (size - stroke * 2) / 2;
@@ -38,7 +39,7 @@ function MacroRing({ label, value, goal, color, unit = 'g', size = 110 }) {
   );
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
+// Helpers
 function parseNum(str) {
   if (!str && str !== 0) return 0;
   const m = String(str).match(/(\d+(?:\.\d+)?)/);
@@ -55,7 +56,7 @@ const MEALS_LIST = ['breakfast', 'lunch', 'dinner'];
 
 const DEFAULT_GOALS = { calories_goal: 2000, protein_goal: 150, carbs_goal: 250, fat_goal: 65, fiber_goal: 25 };
 
-// ── Confetti celebration ───────────────────────────────────────────────────────
+// Confetti celebration
 const CONFETTI_COLORS = ['#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#a855f7','#ec4899','#14b8a6','#f43f5e','#84cc16'];
 
 function ConfettiCelebration({ onDone }) {
@@ -112,14 +113,14 @@ function ConfettiCelebration({ onDone }) {
           style={{ backgroundColor: 'rgba(5,5,8,0.92)', border: '1px solid rgba(255,255,255,0.14)', backdropFilter: 'blur(20px)' }}>
           <div className="text-5xl mb-3">🎉</div>
           <p className="text-2xl sm:text-3xl font-extrabold text-white mb-1">Daily Goal Reached!</p>
-          <p className="text-white/45 text-sm mt-1">You hit your calorie target — great work 🔥</p>
+          <p className="text-white/45 text-sm mt-1">You hit your calorie target for today.</p>
         </div>
       </div>
     </div>
   );
 }
 
-// ── Custom chart tooltip ───────────────────────────────────────────────────────
+// Custom chart tooltip
 const ChartTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
@@ -132,7 +133,7 @@ const ChartTooltip = ({ active, payload, label }) => {
   );
 };
 
-// ── Main Page ──────────────────────────────────────────────────────────────────
+// Main Page
 export default function Tracker() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -168,9 +169,9 @@ export default function Tracker() {
   // Goal draft
   const [goalDraft, setGoalDraft] = useState(null);
 
-  const today = new Date().toISOString().substring(0, 10);
+  const today = campusDate();
 
-  // ── Auth check ─────────────────────────────────────────────────────────────
+  // Auth check
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       if (!data?.user) { navigate('/login'); return; }
@@ -178,7 +179,7 @@ export default function Tracker() {
     });
   }, [navigate]);
 
-  // ── Data fetch ─────────────────────────────────────────────────────────────
+  // Data fetch
   useEffect(() => {
     if (!user) return;
     Promise.all([fetchGoals(), fetchTodayLogs(), fetchWeekData()]);
@@ -196,7 +197,7 @@ export default function Tracker() {
       .from('food_logs').select('*').eq('user_id', user.id).eq('logged_at', today)
       .order('created_at', { ascending: true });
     setLogs(data || []);
-    // Seed base values (1× baseline) for qty scaling — only for freshly loaded entries
+    // Seed the 1x baseline used for quantity scaling, freshly loaded entries only
     const bases = {};
     (data || []).forEach(e => {
       if (!logBasesRef.current[e.id])
@@ -206,10 +207,7 @@ export default function Tracker() {
   }
 
   async function fetchWeekData() {
-    const days = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(); d.setDate(d.getDate() - (6 - i));
-      return d.toISOString().substring(0, 10);
-    });
+    const days = Array.from({ length: 7 }, (_, i) => campusDateOffset(i - 6));
     const { data } = await supabase
       .from('food_logs').select('logged_at, calories, protein_g, carbs_g, fat_g')
       .eq('user_id', user.id).in('logged_at', days);
@@ -225,7 +223,7 @@ export default function Tracker() {
     }));
   }
 
-  // ── Totals ─────────────────────────────────────────────────────────────────
+  // Totals
   const totals = useMemo(() => logs.reduce(
     (acc, e) => ({
       calories: acc.calories + (e.calories  || 0),
@@ -237,12 +235,12 @@ export default function Tracker() {
     { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 }
   ), [logs]);
 
-  // ── Confetti trigger — fires once when calories first cross the goal ──────
+  // Confetti fires once, when calories first cross the goal
   useEffect(() => {
     if (!user || goals.calories_goal <= 0) return;
     const isAbove = totals.calories >= goals.calories_goal;
     if (!initializedRef.current) {
-      // Set baseline on first load — don't celebrate if already over goal
+      // Baseline on first load, so an already-met goal does not celebrate
       prevAboveGoalRef.current = isAbove;
       initializedRef.current = true;
       return;
@@ -254,7 +252,7 @@ export default function Tracker() {
     prevAboveGoalRef.current = isAbove;
   }, [totals.calories, goals.calories_goal, user]);
 
-  // ── Save goals ─────────────────────────────────────────────────────────────
+  // Save goals
   async function saveGoals() {
     const payload = { user_id: user.id, ...goalDraft, updated_at: new Date().toISOString() };
     await supabase.from('nutrition_goals').upsert(payload, { onConflict: 'user_id' });
@@ -262,7 +260,7 @@ export default function Tracker() {
     setShowGoalModal(false);
   }
 
-  // ── Adjust quantity of a logged entry ─────────────────────────────────────
+  // Adjust quantity of a logged entry
   async function updateLogQty(id, newQty) {
     const base = logBasesRef.current[id];
     if (!base) return;
@@ -279,7 +277,7 @@ export default function Tracker() {
     fetchWeekData();
   }
 
-  // ── Delete log ─────────────────────────────────────────────────────────────
+  // Delete log
   async function deleteLog(id) {
     delete logBasesRef.current[id];
     setLogQtys(prev => { const n = { ...prev }; delete n[id]; return n; });
@@ -288,7 +286,7 @@ export default function Tracker() {
     fetchWeekData();
   }
 
-  // ── Dining menu fetch ──────────────────────────────────────────────────────
+  // Dining menu fetch
   useEffect(() => {
     if (!showAddModal || addTab !== 'dining') return;
     let cancelled = false;
@@ -303,7 +301,7 @@ export default function Tracker() {
     return () => { cancelled = true; };
   }, [showAddModal, addTab, diningHall, diningMeal]);
 
-  // ── Log from dining menu ───────────────────────────────────────────────────
+  // Log from dining menu
   async function logDiningItem(item, qty = 1) {
     const entry = {
       user_id: user.id, logged_at: today,
@@ -327,7 +325,7 @@ export default function Tracker() {
     fetchWeekData();
   }
 
-  // ── Log manual ─────────────────────────────────────────────────────────────
+  // Log manual
   async function logManual(e) {
     e.preventDefault();
     if (!manual.name.trim()) return;
@@ -379,12 +377,12 @@ export default function Tracker() {
       <FoodBackground />
       <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 pt-24 pb-20 space-y-4">
 
-        {/* ── Header ── */}
+        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white">Nutrition Tracker</h1>
             <p className="text-white/35 text-xs sm:text-sm mt-0.5">
-              {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+              {formatCampusDate({ weekday: 'long', month: 'long', day: 'numeric' })}
             </p>
           </div>
           <button
@@ -396,7 +394,7 @@ export default function Tracker() {
           </button>
         </div>
 
-        {/* ── Daily summary card ── */}
+        {/* Daily summary card */}
         <div className="rounded-2xl p-5 sm:p-6" style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
           <div className="flex flex-col sm:flex-row sm:items-center gap-6">
             {/* Calorie ring + remaining */}
@@ -442,7 +440,7 @@ export default function Tracker() {
           </div>
         </div>
 
-        {/* ── 7-day chart ── */}
+        {/* 7-day chart */}
         <div className="rounded-2xl p-5 sm:p-6" style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-1.5">
@@ -479,7 +477,7 @@ export default function Tracker() {
           </ResponsiveContainer>
         </div>
 
-        {/* ── Today's food log ── */}
+        {/* Today's food log */}
         <div className="rounded-2xl p-5 sm:p-6" style={{ backgroundColor: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
           <div className="flex items-center justify-between mb-4">
             <p className="text-white/70 text-sm font-semibold">Today's Log</p>
@@ -549,12 +547,12 @@ export default function Tracker() {
         </div>
       </div>
 
-      {/* ══ Goal Modal ════════════════════════════════════════════════════════════ */}
+      {/* Goal Modal */}
       {showGoalModal && goalDraft && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}>
           <div className="w-full max-w-sm rounded-2xl p-6" style={{ backgroundColor: 'rgba(15,15,20,0.99)', border: '1px solid rgba(255,255,255,0.1)' }}>
             <h2 className="text-lg font-bold text-white mb-1">Daily Nutrition Goals</h2>
-            <p className="text-white/35 text-xs mb-5">Set your daily targets — we'll track your progress against these.</p>
+            <p className="text-white/35 text-xs mb-5">Set your daily targets. Your progress is measured against them.</p>
             <div className="space-y-3">
               {[
                 { key: 'calories_goal', label: 'Calories', unit: 'kcal', placeholder: '2000' },
@@ -591,7 +589,7 @@ export default function Tracker() {
         </div>
       )}
 
-      {/* ══ Add Food Modal ════════════════════════════════════════════════════════ */}
+      {/* Add Food Modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4"
           style={{ backgroundColor: 'rgba(0,0,0,0.8)' }}

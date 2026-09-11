@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import FoodBackground from "../Components/background";
 import MenuCard from "../Components/MenuCard";
 import { useParams } from "react-router-dom";
@@ -7,8 +7,11 @@ export function DiningHall() {
     const [menuItems, setMenuItems] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [displayDate, setDisplayDate] = useState(null);
+    const [ageDays, setAgeDays] = useState(0);
     const [activeFilters, setActiveFilters] = useState(new Set());
-    const [notServed, setNotServed] = useState(false);
+    // null | 'not-served' | 'no-data'
+    const [emptyReason, setEmptyReason] = useState(null);
+    const [error, setError] = useState(null);
     const { hall = "stetson-east", meal = "breakfast" } = useParams();
 
     const dietaryRestrictions = [
@@ -27,18 +30,30 @@ export function DiningHall() {
         });
     };
 
-    const fetchMenu = async () => {
+    const fetchMenu = useCallback(async () => {
         setIsLoading(true);
-        setNotServed(false);
+        setEmptyReason(null);
+        setError(null);
         try {
             const res = await fetch(`/api/menu/${hall}/${meal}`);
-            if (res.status === 404) {
-                setNotServed(true);
-                setMenuItems([]);
-                setDisplayDate(null);
-                return;
+
+            if (!res.ok) {
+                // Read the body before deciding. A 404 only means "this hall
+                // does not serve this meal" when it carries our own code; a
+                // bare 404 comes from a dead route or a proxy in front of the
+                // API, and claiming the meal is not served would be a lie.
+                const body = await res.json().catch(() => null);
+
+                if (body?.code === 'PERIOD_NOT_SERVED' || body?.code === 'NO_MENU_DATA') {
+                    setEmptyReason(body.code === 'PERIOD_NOT_SERVED' ? 'not-served' : 'no-data');
+                    setMenuItems([]);
+                    setDisplayDate(null);
+                    setAgeDays(body.ageDays ?? 0);
+                    return;
+                }
+                throw new Error(body?.message || `The menu service returned HTTP ${res.status}.`);
             }
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
             const json = await res.json();
             const normalized = (json.items || []).map(i => {
                 // Parse protein grams from the nutrient string the API returns (e.g. "15 g" → 15)
@@ -73,15 +88,19 @@ export function DiningHall() {
             });
             setMenuItems(normalized);
             setDisplayDate(json.date || null);
+            setAgeDays(json.ageDays ?? 0);
         } catch (err) {
             console.error('fetchMenu error', err);
+            setError(err.message || 'Could not reach the menu service.');
             setMenuItems([]);
+            setDisplayDate(null);
+            setAgeDays(0);
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [hall, meal]);
 
-    useEffect(() => { fetchMenu(); }, [hall, meal]);
+    useEffect(() => { fetchMenu(); }, [fetchMenu]);
 
     return (
         <div className="min-h-screen bg-linear-to-br from-black via-gray-900 to-black relative overflow-hidden">
@@ -95,8 +114,17 @@ export function DiningHall() {
                                     {(hall || "").split("-").map((s) => s[0]?.toUpperCase() + s.slice(1)).join(" ")}
                                     <span className="text-red-400"> {meal && meal[0]?.toUpperCase() + meal.slice(1)}</span>
                                 </h1>
-                                {displayDate && (
-                                    <p className="text-xs text-gray-400 mt-1">Showing menu for <span className="font-medium text-white">{displayDate}</span>.</p>
+                                {displayDate && ageDays === 0 && (
+                                    <p className="text-xs text-gray-400 mt-1">
+                                        Today's menu (<span className="font-medium text-white">{displayDate}</span>).
+                                    </p>
+                                )}
+                                {displayDate && ageDays > 0 && (
+                                    <p className="text-xs mt-1 text-amber-300/90">
+                                        Today's menu has not been posted. Showing{' '}
+                                        <span className="font-medium">{displayDate}</span>, {ageDays}{' '}
+                                        {ageDays === 1 ? 'day' : 'days'} old.
+                                    </p>
                                 )}
                             </div>
 
@@ -121,8 +149,8 @@ export function DiningHall() {
                             </div>
                         </div>
 
-                        {/** Filter items in-memory for a clean UI */}
-                        <ItemGrid menuItems={menuItems} activeFilters={activeFilters} isLoading={isLoading} notServed={notServed} meal={meal} hall={hall} />
+                        {/* Filtering happens in memory so the buttons respond instantly */}
+                        <ItemGrid menuItems={menuItems} activeFilters={activeFilters} isLoading={isLoading} emptyReason={emptyReason} ageDays={ageDays} error={error} onRetry={fetchMenu} meal={meal} hall={hall} />
                     </div>
                 </main>
             </div>
@@ -132,7 +160,7 @@ export function DiningHall() {
 
 export default DiningHall;
 
-function ItemGrid({ menuItems, activeFilters, isLoading, notServed, meal, hall }) {
+function ItemGrid({ menuItems, activeFilters, isLoading, emptyReason, ageDays, error, onRetry, meal, hall }) {
     const filteredMenuItems = useMemo(() => {
         if (activeFilters.size === 0) return menuItems;
         return menuItems.filter(item => {
@@ -160,13 +188,35 @@ function ItemGrid({ menuItems, activeFilters, isLoading, notServed, meal, hall }
     const hallName = (hall || "").split("-").map(s => s[0]?.toUpperCase() + s.slice(1)).join(" ");
     const mealName = meal ? meal[0].toUpperCase() + meal.slice(1) : "";
 
+    // Suggest the meals the user is not already looking at, so we never tell
+    // someone to try breakfast when breakfast is the thing not being served.
+    const otherMeals = ["breakfast", "lunch", "dinner"].filter(m => m !== (meal || "").toLowerCase());
+    const otherMealsText = otherMeals.length === 2
+        ? `${otherMeals[0]} or ${otherMeals[1]}`
+        : otherMeals.join(" or ");
+
     const emptyState = (() => {
         if (isLoading) return null;
-        if (notServed) return (
+        if (error) return (
+            <div className="col-span-full bg-white/5 rounded-2xl p-10 text-center border border-red-500/20">
+                <p className="text-white text-xl font-semibold">Could not load the menu</p>
+                <p className="text-gray-400 mt-2 text-sm max-w-md mx-auto">{error}</p>
+                <button
+                    onClick={onRetry}
+                    className="mt-5 px-5 py-2 rounded-full text-sm font-semibold bg-red-500 hover:bg-red-600 text-white transition"
+                >
+                    Try again
+                </button>
+            </div>
+        );
+        if (emptyReason === 'not-served') return (
             <div className="col-span-full bg-white/5 rounded-2xl p-10 text-center border border-white/8">
                 <p className="text-4xl mb-4">🍽️</p>
                 <p className="text-white text-xl font-semibold">{mealName} isn't served here today</p>
-                <p className="text-gray-400 mt-2 text-sm">{hallName} doesn't offer {mealName.toLowerCase()} — try checking breakfast or dinner instead.</p>
+                <p className="text-gray-400 mt-2 text-sm">
+                    {hallName} doesn't offer {mealName.toLowerCase()} today.
+                    {otherMealsText ? ` Try ${otherMealsText} instead.` : ''}
+                </p>
             </div>
         );
         if (menuItems.length > 0 && filteredMenuItems.length === 0) return (
@@ -180,7 +230,13 @@ function ItemGrid({ menuItems, activeFilters, isLoading, notServed, meal, hall }
             <div className="col-span-full bg-white/5 rounded-2xl p-10 text-center border border-white/8">
                 <p className="text-4xl mb-4">⏳</p>
                 <p className="text-white text-xl font-semibold">Menu not available yet</p>
-                <p className="text-gray-400 mt-2 text-sm">The menu for {mealName.toLowerCase()} hasn't been posted yet. Check back soon or try refreshing.</p>
+                <p className="text-gray-400 mt-2 text-sm">
+                    {emptyReason !== 'no-data'
+                        ? `The ${mealName.toLowerCase()} menu hasn't been posted yet. Check back soon or try refreshing.`
+                        : ageDays > 0
+                            ? `The newest stored menu for ${hallName} is ${ageDays} days old, so it is not being shown. The scraper needs to run.`
+                            : `No menu has been stored for ${hallName} yet. It appears once the scraper has run.`}
+                </p>
             </div>
         );
         return null;
