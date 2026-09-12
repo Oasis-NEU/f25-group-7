@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  formatSlot, formatTime, groupWeek, mergeHours, openState, toMinutes,
+  formatSlot, formatTime, groupWeek, mergeHours, mergeSlots, openState, toMinutes,
 } from '../src/functions/hours.js';
 
 const hall = name => mergeHours([]).find(h => h.name === name);
@@ -91,4 +91,55 @@ test('unknown halls and missing payloads fall back rather than throwing', () => 
     [false, false, false],
   );
   assert.deepEqual(groupWeek(undefined).length, 1);
+});
+
+/* Overlapping windows -------------------------------------------------------
+ * Taken from a real weekly_schedule response on 2026-09-11, where Stetson
+ * East reported the same Sunday twice.
+ */
+
+test('overlapping windows for one day collapse into the widest span', () => {
+  assert.deepEqual(
+    mergeSlots([{ opens: '08:00', closes: '22:00' }, { opens: '08:00', closes: '20:00' }]),
+    [{ opens: '08:00', closes: '22:00' }],
+  );
+});
+
+test('windows that merely touch are joined', () => {
+  assert.deepEqual(
+    mergeSlots([{ opens: '08:00', closes: '10:00' }, { opens: '10:00', closes: '14:00' }]),
+    [{ opens: '08:00', closes: '14:00' }],
+  );
+});
+
+test('genuinely separate sittings are preserved', () => {
+  assert.deepEqual(
+    mergeSlots([{ opens: '16:00', closes: '20:00' }, { opens: '08:00', closes: '10:00' }]),
+    [{ opens: '08:00', closes: '10:00' }, { opens: '16:00', closes: '20:00' }],
+  );
+});
+
+test('malformed windows are dropped rather than rendered', () => {
+  assert.deepEqual(mergeSlots([{ opens: null, closes: '20:00' }, undefined]), []);
+  assert.deepEqual(mergeSlots(undefined), []);
+});
+
+test('a day reported twice renders as one row, not two sittings', () => {
+  const days = [{ day: 0, closed: false, slots: [
+    { opens: '08:00', closes: '22:00' },
+    { opens: '08:00', closes: '20:00' },
+  ] }];
+  const sunday = groupWeek(days).find(r => r.label === 'Sun');
+  assert.equal(sunday.slots.length, 1);
+  assert.deepEqual(sunday.slots.map(formatSlot), ['8:00 AM to 10:00 PM']);
+});
+
+test('open state uses the merged span, not the shorter duplicate', () => {
+  const days = [{ day: 0, closed: false, slots: [
+    { opens: '08:00', closes: '22:00' },
+    { opens: '08:00', closes: '20:00' },
+  ] }];
+  // 21:00 falls inside the real closing time but outside the duplicate.
+  assert.deepEqual(openState(days, { day: 0, minutes: toMinutes('21:00') }),
+    { open: true, closesAt: '22:00' });
 });

@@ -25,10 +25,14 @@ function week(byDay) {
 
 /**
  * Shown when /api/hours has no rows, which is the case until the scraper has
- * run at least once. Last checked against DineOnCampus on 2026-04-12, so treat
- * it as approximate and re-verify each semester.
+ * run at least once.
+ *
+ * Checked against the live DineOnCampus weekly_schedule on 2026-09-11 and it
+ * matched for every ordinary day. The only differences were days the API
+ * itself flagged with has_special_hours, which were Labor Day weekend, so
+ * they are deliberately not baked in here. Re-verify each semester.
  */
-export const FALLBACK_UPDATED = '2026-04-12';
+export const FALLBACK_UPDATED = '2026-09-11';
 
 export const HALLS = [
   {
@@ -95,6 +99,32 @@ export function formatSlot(slot) {
   return `${formatTime(slot.opens)} to ${formatTime(slot.closes)}`;
 }
 
+/**
+ * Collapse overlapping service windows into one.
+ *
+ * DineOnCampus sometimes reports the same day twice. Stetson East returns
+ * both 08:00-22:00 and 08:00-20:00 for a Sunday, and rendering both stacked
+ * reads as two separate sittings. Genuinely separate windows, such as 60
+ * Belvidere's breakfast and dinner, have a real gap and are left alone.
+ */
+export function mergeSlots(slots) {
+  const sorted = (slots ?? [])
+    .filter(slot => slot?.opens && slot?.closes)
+    .slice()
+    .sort((a, b) => toMinutes(a.opens) - toMinutes(b.opens));
+
+  const merged = [];
+  for (const slot of sorted) {
+    const previous = merged[merged.length - 1];
+    if (previous && toMinutes(slot.opens) <= toMinutes(previous.closes)) {
+      if (toMinutes(slot.closes) > toMinutes(previous.closes)) previous.closes = slot.closes;
+    } else {
+      merged.push({ ...slot });
+    }
+  }
+  return merged;
+}
+
 /** Collapse consecutive days that share a schedule into "Mon to Thu" rows. */
 export function groupWeek(days) {
   const byDay = new Map((days ?? []).map(entry => [entry.day, entry]));
@@ -102,7 +132,7 @@ export function groupWeek(days) {
 
   for (const day of DISPLAY_ORDER) {
     const entry = byDay.get(day) ?? { day, closed: true, slots: [] };
-    const slots = entry.closed ? [] : (entry.slots ?? []);
+    const slots = entry.closed ? [] : mergeSlots(entry.slots);
     const signature = slots.length === 0
       ? 'closed'
       : slots.map(slot => `${slot.opens}-${slot.closes}`).join(',');
@@ -127,7 +157,7 @@ export function groupWeek(days) {
 /** Whether a hall is serving right now, and when that changes. */
 export function openState(days, now = campusNow()) {
   const todayEntry = (days ?? []).find(entry => entry.day === now.day);
-  const slots = todayEntry && !todayEntry.closed ? (todayEntry.slots ?? []) : [];
+  const slots = todayEntry && !todayEntry.closed ? mergeSlots(todayEntry.slots) : [];
 
   for (const slot of slots) {
     if (now.minutes >= toMinutes(slot.opens) && now.minutes < toMinutes(slot.closes)) {
