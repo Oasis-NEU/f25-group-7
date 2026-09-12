@@ -26,4 +26,12 @@ export default defineConfig([
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
     },
   },
+  {
+    // Serverless functions and the Vite config run on Node, not in the
+    // browser, so they need process, console and the Node build of fetch.
+    files: ['api/**/*.js', 'lib/**/*.js', 'test/**/*.js', '*.config.js', 'scripts/**/*.js'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
 ])

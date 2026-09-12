@@ -1,11 +1,12 @@
 {
   "name": "backend-folder",
   "version": "1.0.0",
-  "description": "",
+  "description": "Development API and the DineOnCampus scraper for NU Dining.",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "scrape": "node run-scrape.js"
   },
   "keywords": [],
   "author": "",

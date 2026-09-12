@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import FoodBackground from "../Components/background";
 import { supabase } from '../config/supabaseClient';
 
@@ -14,7 +14,7 @@ function Reset(){
           setError('');
           setMessage('');
      try{
-          const{data,error} = await supabase.auth.resetPasswordForEmail(email, {
+          const{error} = await supabase.auth.resetPasswordForEmail(email, {
                redirectTo: `${window.location.origin}/reset-password`
           });
           if(error){

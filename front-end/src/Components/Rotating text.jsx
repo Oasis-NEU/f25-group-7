@@ -1,6 +1,9 @@
 'use client';
 
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useState } from 'react';
+// motion is only referenced as <motion.span>, and no-unused-vars cannot see
+// through a JSX member expression without eslint-plugin-react.
+// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'motion/react';
 
 import './RotatingText.css';

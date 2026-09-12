@@ -1,13 +1,16 @@
 /**
- * Populate today's menu data.
+ * Populate today's menu data and the weekly opening hours.
  *
  *   cd backend-folder
  *   node run-scrape.js
  *
- * DineOnCampus is behind Cloudflare — must run from a residential IP
- * (your machine, not GitHub Actions / cloud VMs).
+ * DineOnCampus sits behind Cloudflare, which blocks datacenter traffic, so
+ * this has to run from a residential IP (your machine, not GitHub Actions or
+ * a cloud VM). That is also why it drives a real Chrome through Puppeteer
+ * rather than calling fetch directly.
  */
 require('dotenv').config();
+const fs = require('fs');
 const { createClient } = require('@supabase/supabase-js');
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
@@ -24,19 +27,49 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+const SITE_ID = '5751fd2b90975b60e048929a';
+
 const LOCATIONS = [
   { id: '586d05e4ee596f6e6c04b527', name: 'The Eatery at Stetson East' },
   { id: '5f4f8a425e42ad17329be131', name: 'United Table at International Village' },
   { id: '686d10a81fea2d6aaeb9f733', name: 'Campus Roots at 60 Belvidere' },
 ];
 
-const CHROME_PATH = process.env.CHROME_PATH
-  || (process.platform === 'darwin'
-      ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
-      : '/usr/bin/google-chrome-stable');
+const CHROME_CANDIDATES = [
+  process.env.CHROME_PATH,
+  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+  '/Applications/Chromium.app/Contents/MacOS/Chromium',
+  '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
+  '/usr/bin/google-chrome-stable',
+  '/usr/bin/google-chrome',
+  '/usr/bin/chromium-browser',
+  '/usr/bin/chromium',
+].filter(Boolean);
+
+/** First browser that actually exists, so a missing one fails with advice. */
+function resolveChrome() {
+  const found = CHROME_CANDIDATES.find(p => fs.existsSync(p));
+  if (!found) {
+    throw new Error(
+      `No Chrome build found. Looked in:\n  ${CHROME_CANDIDATES.join('\n  ')}\n`
+      + 'Install Chrome or set CHROME_PATH to its executable.'
+    );
+  }
+  return found;
+}
+
+/**
+ * Cloudflare is markedly harder to get past in headless mode, so a real
+ * visible window is the default. That means a scheduled run needs a
+ * logged-in desktop session: a plain headless cron will not work. Set
+ * SCRAPE_HEADLESS=true to try anyway.
+ */
+const HEADLESS = process.env.SCRAPE_HEADLESS === 'true';
+
+// Collected so the process can exit non-zero and a cron log shows the reason.
+const failures = [];
 
 const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-console.log(`Scraping menu data for ${today}...\n`);
 
 let browser, page;
 
@@ -52,26 +85,136 @@ async function fetchJson(url) {
   return JSON.parse(text);
 }
 
-async function main() {
-  const { data: existing } = await supabase
-    .from('menu_items').select('id').eq('date', today).limit(1);
-  if (existing && existing.length > 0) {
-    console.log(`Menu data already exists for ${today}. Nothing to do.`);
+/* Opening hours ------------------------------------------------------------ */
+
+const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+
+function pad(n) {
+  return String(n).padStart(2, '0');
+}
+
+/**
+ * Resolve the day index for one entry of a weekly_schedule "week" array.
+ * The field is normally a number where 0 is Sunday, but fall back to the
+ * position in the array if it is missing or shaped differently.
+ */
+function dayIndexOf(entry, position) {
+  if (typeof entry.day === 'number') return entry.day % 7;
+  if (typeof entry.day === 'string') {
+    const found = DAY_NAMES.indexOf(entry.day.trim().toLowerCase());
+    if (found !== -1) return found;
+  }
+  return position % 7;
+}
+
+/** Turn one weekly_schedule location into hall_hours rows. */
+function hourRowsFor(locationName, weekEntries) {
+  const rows = [];
+
+  weekEntries.forEach((entry, position) => {
+    const day = dayIndexOf(entry, position);
+    const windows = Array.isArray(entry.hours) ? entry.hours : [];
+    const markedClosed = entry.closed === true || entry.status === 'closed';
+
+    if (markedClosed || windows.length === 0) {
+      rows.push({
+        location_name: locationName,
+        day_of_week: day,
+        slot_index: 0,
+        opens_at: null,
+        closes_at: null,
+        closed: true,
+      });
+      return;
+    }
+
+    windows.forEach((window, slotIndex) => {
+      const startHour = Number(window.start_hour);
+      const endHour = Number(window.end_hour);
+      if (!Number.isFinite(startHour) || !Number.isFinite(endHour)) return;
+
+      rows.push({
+        location_name: locationName,
+        day_of_week: day,
+        slot_index: slotIndex,
+        opens_at: `${pad(startHour)}:${pad(Number(window.start_minutes) || 0)}:00`,
+        closes_at: `${pad(endHour)}:${pad(Number(window.end_minutes) || 0)}:00`,
+        closed: false,
+      });
+    });
+  });
+
+  return rows;
+}
+
+async function scrapeHours() {
+  console.log('\nOpening hours');
+
+  let payload;
+  try {
+    payload = await fetchJson(
+      `https://api.dineoncampus.com/v1/locations/weekly_schedule?site_id=${SITE_ID}&date=${today}`
+    );
+  } catch (e) {
+    console.error(`  weekly_schedule fetch error: ${e.message}`);
+    failures.push(`hours: ${e.message}`);
     return;
   }
 
-  browser = await puppeteer.launch({
-    headless: false,
-    executablePath: CHROME_PATH,
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-  });
-  page = await browser.newPage();
-  await page.setViewport({ width: 1280, height: 800 });
+  const remoteLocations = payload.the_locations || payload.locations || [];
+  if (!remoteLocations.length) {
+    console.error('  weekly_schedule returned no locations. Raw keys:', Object.keys(payload).join(', '));
+    failures.push('hours: weekly_schedule returned no locations');
+    return;
+  }
+
+  for (const loc of LOCATIONS) {
+    const match = remoteLocations.find(
+      r => r._id === loc.id || r.id === loc.id || r.name === loc.name
+    );
+    if (!match) {
+      // A hardcoded location id that no longer matches is a silent-rot risk,
+      // so treat it as a failure rather than a warning.
+      console.warn(`  ${loc.name}: not present in weekly_schedule, leaving stored hours untouched`);
+      failures.push(`hours: ${loc.name} not found upstream (id ${loc.id} may be stale)`);
+      continue;
+    }
+
+    const rows = hourRowsFor(loc.name, Array.isArray(match.week) ? match.week : []);
+    if (!rows.length) {
+      console.warn(`  ${loc.name}: no parsable hours, leaving stored hours untouched`);
+      failures.push(`hours: ${loc.name} returned no parsable windows`);
+      continue;
+    }
+
+    // Replace the whole week so a hall that drops a service window does not
+    // keep the stale slot around.
+    const { error: delErr } = await supabase
+      .from('hall_hours').delete().eq('location_name', loc.name);
+    if (delErr) { console.error(`  ${loc.name}: clear error: ${delErr.message}`); continue; }
+
+    const { error: insErr } = await supabase.from('hall_hours').insert(rows);
+    if (insErr) { console.error(`  ${loc.name}: insert error: ${insErr.message}`); continue; }
+
+    const openDays = rows.filter(r => !r.closed).length;
+    console.log(`  ${loc.name}: ${rows.length} rows (${openDays} service windows)`);
+  }
+}
+
+/* Menus -------------------------------------------------------------------- */
+
+async function scrapeMenus() {
+  const { data: existing } = await supabase
+    .from('menu_items').select('id').eq('date', today).limit(1);
+  if (existing && existing.length > 0) {
+    console.log(`\nMenu data already exists for ${today}. Nothing to do.`);
+    return;
+  }
 
   let totalItems = 0;
 
   for (const loc of LOCATIONS) {
-    console.log(`\n→ ${loc.name}`);
+    console.log(`\n${loc.name}`);
 
     let dbLoc;
     const { data: existingLoc } = await supabase
@@ -183,9 +326,44 @@ async function main() {
   await supabase.from('steast_vs_iv')
     .upsert({ date: today, steast: 0, iv: 0 }, { onConflict: 'date', ignoreDuplicates: true });
 
-  console.log(`\nDone! Inserted ${totalItems} menu items for ${today}.`);
+  if (totalItems === 0) {
+    failures.push(`menus: nothing was inserted for ${today}`);
+  }
+  console.log(`\nInserted ${totalItems} menu items for ${today}.`);
+}
+
+async function main() {
+  console.log(`Scraping DineOnCampus for ${today}`);
+
+  const chromePath = resolveChrome();
+  console.log(`Using ${chromePath}${HEADLESS ? ' (headless)' : ''}`);
+
+  browser = await puppeteer.launch({
+    headless: HEADLESS,
+    executablePath: chromePath,
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+  });
+  page = await browser.newPage();
+  await page.setViewport({ width: 1280, height: 800 });
+
+  // Hours change less often than menus but are cheap to refresh, so they run
+  // on every invocation even when today's menu is already stored.
+  await scrapeHours();
+  await scrapeMenus();
 }
 
 main()
-  .catch(err => { console.error('Fatal:', err.message); process.exit(1); })
-  .finally(() => browser?.close());
+  .catch(err => {
+    console.error('Fatal:', err.message);
+    failures.push(`fatal: ${err.message}`);
+  })
+  .finally(async () => {
+    await browser?.close();
+    if (failures.length) {
+      console.error(`\n${failures.length} problem(s):`);
+      for (const f of failures) console.error(`  - ${f}`);
+      process.exitCode = 1;
+    } else {
+      console.log('\nAll done, no problems.');
+    }
+  });

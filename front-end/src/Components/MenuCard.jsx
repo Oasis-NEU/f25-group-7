@@ -22,7 +22,7 @@ export const MenuCard = ({ food }) => {
             onClick={() => setIsExpanded(!isExpanded)}
             className="relative rounded-2xl overflow-hidden transform transition-all duration-300 cursor-pointer shadow-lg hover:scale-[1.03] hover:shadow-xl"
         >
-            {/* subtle card glow */}
+            {/* Subtle card glow */}
             <div className="absolute inset-0 bg-linear-to-br from-white via-white to-white opacity-15 -z-10" />
             <div className="bg-white/4 backdrop-blur-sm border border-white/6 rounded-2xl p-5 h-full flex flex-col justify-between gap-3">
 
@@ -41,7 +41,7 @@ export const MenuCard = ({ food }) => {
                 {/* Badges row */}
                 <div className="flex flex-wrap gap-1.5 items-center">
                     <span className={badgeClass} style={badgeStyle}>
-                        {food.calories != null ? `${food.calories} cal` : '— cal'}
+                        {food.calories != null ? `${food.calories} cal` : 'Calories n/a'}
                     </span>
                     {food.protein && (
                         <span className={badgeClass} style={badgeStyle}>💪 {food.protein} protein</span>

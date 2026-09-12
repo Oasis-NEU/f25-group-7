@@ -3,6 +3,7 @@ import FoodBackground from "../Components/background";
 import TextType from '../Components/TextType';
 import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "../config/supabaseClient";
+import { campusDate, campusNow } from '../functions/campusTime';
 import { useNavigate } from 'react-router-dom';
 
 const MEAL_PERIODS = [
@@ -11,9 +12,10 @@ const MEAL_PERIODS = [
   { name: 'dinner',    label: 'Dinner',    start: 16 * 60, end: 21 * 60 },
 ];
 
+// Meal windows are campus opening times, so compare against Boston rather
+// than whatever timezone the visitor's laptop is set to.
 function minutesNow() {
-  const now = new Date();
-  return now.getHours() * 60 + now.getMinutes();
+  return campusNow().minutes;
 }
 function getStartedPeriods() {
   const m = minutesNow();
@@ -39,20 +41,20 @@ export const Vote = () => {
   const navigate = useNavigate();
   const [user, setUser]                 = useState(null);
   const [votes, setVotes]               = useState({ steast: 0, iv: 0 });
-  // votedPeriods is now loaded from Supabase — works across devices/browsers
+  // votedPeriods comes from Supabase so the lock follows the user across devices
   const [votedPeriods, setVotedPeriods] = useState([]);
   const [startedPeriods, setStartedPeriods] = useState(getStartedPeriods());
   const [currentPeriod, setCurrentPeriod]   = useState(getCurrentPeriod());
   const [toast, setToast]   = useState(null);
   const toastTimer = useRef(null);
-  const today = new Date().toISOString().substring(0, 10);
+  const today = campusDate();
 
   // Slots the user is allowed to vote in right now
   const unvotedSlots = startedPeriods.filter(p => !votedPeriods.includes(p.name));
   const canVote      = unvotedSlots.length > 0;
   const nextPeriod   = getNextPeriod();
 
-  // ── Auth ─────────────────────────────────────────────────────────────────────
+  // Auth
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       if (!data?.user) { navigate('/login'); return; }
@@ -60,7 +62,7 @@ export const Vote = () => {
     });
   }, [navigate]);
 
-  // ── All-time cumulative totals (re-fetched on any Realtime event) ─────────────
+  // All-time cumulative totals, refetched on any Realtime event
   const fetchTotals = useCallback(async () => {
     const { data } = await supabase.from("votes").select("location");
     if (data) {
@@ -71,7 +73,7 @@ export const Vote = () => {
     }
   }, []);
 
-  // ── Load user's voted periods for today + subscribe to Realtime ───────────────
+  // Load the user's voted periods for today and subscribe to Realtime
   useEffect(() => {
     if (!user) return;
 
@@ -103,7 +105,7 @@ export const Vote = () => {
     return () => { supabase.removeChannel(channel); clearInterval(clock); };
   }, [user, fetchTotals, today]);
 
-  // ── Cast vote ────────────────────────────────────────────────────────────────
+  // Cast vote
   const handleVote = async (option) => {
     if (!canVote || !user) return;
     const label = option === "steast" ? "Stetson East" : "International Village";
@@ -125,7 +127,7 @@ export const Vote = () => {
     });
 
     if (error) {
-      // Roll back — DB rejected (e.g. duplicate vote from another tab)
+      // Roll back: the database rejected it, most likely a duplicate from another tab
       setVotedPeriods(prev => prev.filter(p => p !== slotToMark.name));
       setVotes(prev => ({ ...prev, [option]: Math.max(0, prev[option] - 1) }));
       return;
@@ -136,7 +138,7 @@ export const Vote = () => {
     toastTimer.current = setTimeout(() => setToast(null), 5000);
   };
 
-  // ── Undo ─────────────────────────────────────────────────────────────────────
+  // Undo
   const handleUndo = async () => {
     if (!toast || !user) return;
 
@@ -157,10 +159,10 @@ export const Vote = () => {
   const statusText = () => {
     if (unvotedSlots.length > 0) {
       const names = unvotedSlots.map(p => p.label).join(' & ');
-      return `${unvotedSlots.length} vote${unvotedSlots.length > 1 ? 's' : ''} available — ${names}`;
+      return `${unvotedSlots.length} vote${unvotedSlots.length > 1 ? 's' : ''} available: ${names}`;
     }
-    if (nextPeriod) return `All caught up · next vote opens at ${fmtTime(nextPeriod.start)} for ${nextPeriod.label}`;
-    return 'All 3 votes used for today · see you tomorrow';
+    if (nextPeriod) return `Next vote opens at ${fmtTime(nextPeriod.start)} for ${nextPeriod.label}`;
+    return 'All 3 votes used for today. See you tomorrow.';
   };
 
   return (

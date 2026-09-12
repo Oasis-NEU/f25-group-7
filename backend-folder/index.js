@@ -1,422 +1,348 @@
+/**
+ * Local development API.
+ *
+ * Mirrors the Vercel functions in front-end/api so that `npm run dev` behaves
+ * the same as production. Vite proxies /api here (see front-end/vite.config.js).
+ */
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+// 3000 collides with almost every other dev server, so default higher.
+const PORT = process.env.PORT || 3001;
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// Helper function to map URL hall slugs to database location names
-function mapHallSlugToLocationName(hallSlug) {
-  const hallMap = {
-    'stetson-east': 'The Eatery at Stetson East',
-    'steast':       'The Eatery at Stetson East',
-    'international-village': 'United Table at International Village',
-    'iv':           'United Table at International Village',
-    '60-belvidere': 'Campus Roots at 60 Belvidere',
-    'belvidere':    'Campus Roots at 60 Belvidere',
-  };
-  return hallMap[hallSlug.toLowerCase()] || hallSlug;
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+  console.error('ERROR: Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in backend-folder/.env');
+  process.exit(1);
 }
 
-// Helper function to map URL meal slugs to period names
-function mapMealSlugToPeriodName(mealSlug) {
-  const mealMap = {
-    'breakfast': 'Breakfast',
-    'lunch': 'Lunch',
-    'dinner': 'Dinner',
-    'brunch': 'Brunch'
-  };
-  
-  return mealMap[mealSlug.toLowerCase()] || mealSlug;
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
+
+const HALLS = {
+  'stetson-east':          'The Eatery at Stetson East',
+  'steast':                'The Eatery at Stetson East',
+  'international-village': 'United Table at International Village',
+  'iv':                    'United Table at International Village',
+  '60-belvidere':          'Campus Roots at 60 Belvidere',
+  'belvidere':             'Campus Roots at 60 Belvidere',
+};
+
+const MEALS = {
+  breakfast: 'Breakfast',
+  lunch:     'Lunch',
+  dinner:    'Dinner',
+  brunch:    'Brunch',
+};
+
+/** Today in Boston as YYYY-MM-DD, matching the date the scraper writes. */
+function today() {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 }
 
-// Helper function to map station values to database station names
-function mapStationValueToName(stationValue) {
-  const stationMap = {
-    'cucina': 'Cucina',
-    'rice_station': 'Rice Station',
-    'homestyle': 'HomeStyle',
-    'menutainment': 'MenuTainment'
-  };
-  
-  return stationMap[stationValue.toLowerCase()] || stationValue;
+/**
+ * How far back the fallback will reach when today has not been scraped.
+ * Beyond this the pipeline is broken rather than merely late.
+ */
+const MAX_FALLBACK_AGE_DAYS = 14;
+
+/** Whole days between a date or timestamp and today on campus. */
+function ageInDays(value, reference = today()) {
+  if (!value) return null;
+  const text = String(value);
+  const then = Date.parse(text.length <= 10 ? `${text}T00:00:00Z` : text);
+  const now = Date.parse(`${reference}T00:00:00Z`);
+  if (Number.isNaN(then) || Number.isNaN(now)) return null;
+  return Math.max(0, Math.round((now - then) / 86400000));
 }
 
-// GET /api/menu/:hall/:meal - Get menu for hall and meal
-app.get('/api/menu/:hall/:meal', async (req, res) => {
-  try {
-    const { hall, meal } = req.params;
-    const { station, dietary } = req.query; // Optional query params
-    
-    const locationName = mapHallSlugToLocationName(hall);
-    const periodName = mapMealSlugToPeriodName(meal);
-    
-    // Get today's date in the same format as stored
-    let today = new Date().toLocaleDateString('en-CA', {
-      timeZone: 'America/New_York'
+class HttpError extends Error {
+  constructor(status, message, extra = {}) {
+    super(message);
+    this.status = status;
+    this.extra = extra;
+  }
+}
+
+function unwrap({ data, error }, context) {
+  if (error) throw new HttpError(502, `${context}: ${error.message}`);
+  return data;
+}
+
+/** Route wrapper so a rejected promise returns JSON instead of hanging. */
+function route(handler) {
+  return (req, res) => {
+    Promise.resolve(handler(req, res)).catch(err => {
+      const status = Number(err?.status) || 500;
+      if (status >= 500) console.error(`${req.method} ${req.originalUrl} failed:`, err);
+      if (res.headersSent) return;
+      res.status(status).json({
+        error: 'Request failed',
+        message: err?.message || 'Unknown error',
+        ...(err?.extra || {}),
+      });
     });
-    // dateToUse will be the date we actually query (fallback to latest available if today's missing when the actual date is different from the stored date format or if today's data is missing)
-    let dateToUse = today;
-    
-    console.log('Querying location:', locationName, 'date:', today);
+  };
+}
 
-    // Find a location for today that has the requested period
-    let { data: possibleLocations, error: locListError } = await supabase
-      .from('locations')
-      .select('id, name, date')
-      .eq('name', locationName)
-      .eq('date', today);
-    console.log('Found locations for today:', Array.isArray(possibleLocations) ? possibleLocations.length : 0, 'error:', locListError);
+app.get('/api/menu/:hall/:meal', route(async (req, res) => {
+  const hallSlug = String(req.params.hall || '').toLowerCase();
+  const mealSlug = String(req.params.meal || '').toLowerCase();
+  if (!hallSlug || !mealSlug) throw new HttpError(400, 'Both a hall and a meal are required.');
 
-    // Fallback 1: no location rows at all for today
-    if ((!possibleLocations || possibleLocations.length === 0) && !locListError) {
-      const { data: latestLocations, error: latestLocErr } = await supabase
-        .from('locations')
-        .select('id, name, date')
+  const locationName = HALLS[hallSlug] || hallSlug;
+  const periodName = MEALS[mealSlug] || mealSlug;
+
+  const currentDate = today();
+  let dateToUse = currentDate;
+
+  let locations = unwrap(
+    await supabase
+      .from('locations').select('id, name, date')
+      .eq('name', locationName).eq('date', currentDate),
+    'looking up locations'
+  );
+
+  // Nothing scraped for today yet, so show the most recent day we do have.
+  if (!locations || locations.length === 0) {
+    const latest = unwrap(
+      await supabase
+        .from('locations').select('id, name, date')
         .eq('name', locationName)
-        .order('date', { ascending: false })
-        .limit(10);
-      if (!latestLocErr && latestLocations && latestLocations.length > 0) {
-        possibleLocations = latestLocations;
-        dateToUse = latestLocations[0].date;
-        console.log('Falling back to latest date for location:', dateToUse);
-      }
+        .order('date', { ascending: false }).limit(10),
+      'looking up the most recent locations'
+    );
+    if (latest && latest.length) {
+      locations = latest;
+      dateToUse = latest[0].date;
     }
+  }
 
-    // Fallback 2: today has location rows but the scrape left no periods
-    // (partial failure — inserts locations then errors before periods/items)
-    if (possibleLocations && possibleLocations.length > 0 && dateToUse === today) {
-      const { data: hasPeriods } = await supabase
-        .from('periods')
-        .select('id')
-        .in('location_id', possibleLocations.map(l => l.id))
-        .limit(1);
-      if (!hasPeriods || hasPeriods.length === 0) {
-        console.log('Today has locations but no periods — falling back to previous date');
-        const { data: prevLocs } = await supabase
-          .from('locations')
-          .select('id, name, date')
-          .eq('name', locationName)
-          .neq('date', today)
-          .order('date', { ascending: false })
-          .limit(10);
-        if (prevLocs && prevLocs.length > 0) {
-          possibleLocations = prevLocs;
-          dateToUse = prevLocs[0].date;
-          console.log('Falling back to date:', dateToUse);
-        }
-      }
-    }
-
-    // Try a fuzzy match on name or hall slug if exact name didn't find anything
-    if ((!possibleLocations || possibleLocations.length === 0) && !locListError) {
-      try {
-        const fuzzyName = `%${locationName.replace(/\s+/g, '%')}%`;
-        const { data: fuzzyLocs } = await supabase
-          .from('locations')
-          .select('id, name, date')
-          .ilike('name', fuzzyName)
-          .order('date', { ascending: false })
-          .limit(10);
-        if (fuzzyLocs && fuzzyLocs.length > 0) {
-          possibleLocations = fuzzyLocs;
-          dateToUse = fuzzyLocs[0].date;
-          console.log('Falling back to fuzzy-matched location/date:', fuzzyLocs[0].name, dateToUse);
-        }
-      } catch (e) {
-        console.warn('Fuzzy location lookup failed:', e.message || e);
-      }
-    }
-
-    if (locListError) {
-      return res.status(500).json({ error: 'Error querying locations', message: locListError.message });
-    }
-
-    if (!possibleLocations || possibleLocations.length === 0) {
-      return res.status(404).json({ 
-        error: 'Location not found',
-        message: `No menu data found for ${locationName} on ${today}`
-      });
-    }
-
-    let location = null;
-    let period = null;
-    for (const loc of possibleLocations) {
-      console.log('Checking periods for location id:', loc.id, 'name:', loc.name);
-      const { data: pRows, error: pErr } = await supabase
-        .from('periods')
-        .select('id, name, date')
-        .eq('location_id', loc.id)
-        .eq('name', periodName)
-        .eq('date', dateToUse);
-      console.log('Period query result len:', Array.isArray(pRows) ? pRows.length : 0, 'error:', pErr, 'dateUsed:', dateToUse);
-      if (!pErr && Array.isArray(pRows) && pRows.length > 0) {
-        // Ensure the selected period actually has stations today
-        for (const p of pRows) {
-          const { data: sRows, error: sErr } = await supabase
-            .from('stations')
-            .select('id')
-            .eq('period_id', p.id)
-            .eq('date', dateToUse);
-          if (!sErr && Array.isArray(sRows) && sRows.length > 0) {
-            location = loc;
-            period = p;
-            break;
-          }
-        }
-        if (period) break;
-      }
-    }
-    
-    if (!period) {
-      return res.status(404).json({ 
-        error: 'Period not found',
-        message: `No menu data found for ${periodName} at ${locationName} on ${today}`
-      });
-    }
-    
-    // Get all stations for this period
-    const { data: stations, error: stationsError } = await supabase
-      .from('stations')
-      .select('id, name')
-      .eq('period_id', period.id)
-      .eq('date', dateToUse);
-    
-    if (stationsError) {
-      return res.status(500).json({ 
-        error: 'Error fetching stations',
-        message: stationsError.message
-      });
-    }
-    
-    if (!stations || stations.length === 0) {
-      return res.json({
-        location: location.name,
-        period: period.name,
-        date: today,
-        items: [],
-        totalItems: 0
-      });
-    }
-    
-    // Build query for menu items
-    let menuItemsQuery = supabase
-      .from('menu_items')
-      .select(`
-        id,
-        name,
-        calories,
-        portion,
-        is_vegetarian,
-        is_vegan,
-        is_high_protein,
-        station_id,
-        stations!inner(id, name),
-        nutrients(name, value, uom, value_numeric)
-      `)
-      .eq('date', dateToUse)
-      .in('station_id', stations.map(s => s.id));
-    
-    // Filter by station if provided
-    if (station) {
-      const stationName = mapStationValueToName(station);
-      const filteredStations = stations.filter(s => 
-        s.name.toLowerCase().includes(stationName.toLowerCase())
+  // Today has location rows but no periods, which is what a scrape that died
+  // partway through leaves behind. Prefer the last complete day.
+  if (locations && locations.length && dateToUse === currentDate) {
+    const periods = unwrap(
+      await supabase
+        .from('periods').select('id')
+        .in('location_id', locations.map(l => l.id)).limit(1),
+      'checking for periods'
+    );
+    if (!periods || periods.length === 0) {
+      const previous = unwrap(
+        await supabase
+          .from('locations').select('id, name, date')
+          .eq('name', locationName).neq('date', currentDate)
+          .order('date', { ascending: false }).limit(10),
+        'looking up previous locations'
       );
-      
-      if (filteredStations.length === 0) {
-        return res.status(404).json({ 
-          error: 'Station not found',
-          message: `No station found matching ${stationName}`
-        });
-      }
-      
-      menuItemsQuery = menuItemsQuery.in('station_id', filteredStations.map(s => s.id));
-    }
-    
-    // Filter by dietary restriction if provided
-    if (dietary === 'vegan') {
-      menuItemsQuery = menuItemsQuery.eq('is_vegan', true);
-    } else if (dietary === 'vegetarian') {
-      menuItemsQuery = menuItemsQuery.eq('is_vegetarian', true);
-    }
-    
-    let { data: menuItems, error: itemsError } = await menuItemsQuery;
-
-    // If the complex select returned no items or errored (possible missing FK relations),
-    // fall back to a simple select to ensure we return basic item data.
-    if ((itemsError && !menuItems) || (Array.isArray(menuItems) && menuItems.length === 0)) {
-      try {
-        const stationIds = (stations || []).map(s => s.id);
-        const fallback = await supabase
-          .from('menu_items')
-          .select('id, name, station_id, calories, portion, is_vegetarian, is_vegan, is_high_protein')
-          .eq('date', dateToUse)
-          .in('station_id', stationIds);
-        menuItems = fallback.data || [];
-        itemsError = fallback.error || null;
-      } catch (err) {
-        itemsError = err;
+      if (previous && previous.length) {
+        locations = previous;
+        dateToUse = previous[0].date;
       }
     }
+  }
 
-    if (itemsError) {
-      return res.status(500).json({ 
-        error: 'Error fetching menu items',
-        message: itemsError.message || String(itemsError)
-      });
-    }
-    
-    // Format the response
-    const formattedItems = (menuItems || []).map(item => {
-      const nuts = item.nutrients || [];
-      const find = (keyword) => {
-        const n = nuts.find(n => n.name.toLowerCase().includes(keyword));
-        return n ? `${n.value}${n.uom ? ' ' + n.uom : ''}`.trim() : null;
-      };
-
-      return {
-        id: item.id,
-        name: item.name,
-        calories: item.calories || null,
-        portion: item.portion || null,
-        station: item.stations?.name || null,
-        isVegetarian: item.is_vegetarian,
-        isVegan: item.is_vegan,
-        isHighProtein: item.is_high_protein,
-        protein: find('protein'),
-        fat: find('total fat'),
-        carbs: find('total carbohydrate'),
-        fiber: find('dietary fiber'),
-        sodium: find('sodium'),
-        sugar: find('total sugar'),
-        description: null,
-      };
-    });
-    
-    // If we still don't have any items, try a broader fallback:
-    // - find period ids for today with the requested name whose location has the requested name
-    // - find stations for those periods
-    // - return menu_items for those stations
-    if ((formattedItems || []).length === 0) {
-      try {
-        const { data: locs } = await supabase
-          .from('locations')
-          .select('id')
-          .eq('name', locationName)
-          .eq('date', dateToUse);
-        const locationIds = (locs || []).map(l => l.id);
-
-        const { data: periodMatches } = await supabase
-          .from('periods')
-          .select('id')
-          .in('location_id', locationIds)
-          .eq('name', periodName)
-          .eq('date', dateToUse);
-        const periodIds = (periodMatches || []).map(p => p.id);
-
-        const { data: fallbackStations } = await supabase
-          .from('stations')
-          .select('id, name')
-          .in('period_id', periodIds)
-          .eq('date', dateToUse);
-
-        const stationIds = (fallbackStations || []).map(s => s.id);
-        if (stationIds.length > 0) {
-            const { data: fallbackItems } = await supabase
-            .from('menu_items')
-            .select('id, name')
-            .eq('date', dateToUse)
-            .in('station_id', stationIds);
-
-          if (fallbackItems && fallbackItems.length > 0) {
-            const simpleFormatted = fallbackItems.map(i => ({
-              id: i.id,
-              name: i.name
-            }));
-            return res.json({
-              location: locationName,
-              period: periodName,
-              date: today,
-              items: simpleFormatted,
-              totalItems: simpleFormatted.length,
-              note: 'Returned via fallback broad query'
-            });
-          }
-        }
-      } catch (err) {
-        console.error('Fallback query error:', err);
-      }
-    }
-    
-    // Last-resort fallback: return any menu items for today so the UI shows something
-    if ((formattedItems || []).length === 0) {
-      try {
-        const { data: anyItems, error: anyErr } = await supabase
-          .from('menu_items')
-          .select('id, name')
-          .eq('date', dateToUse)
-          .limit(50);
-        if (!anyErr && Array.isArray(anyItems) && anyItems.length > 0) {
-          const simple = anyItems.map(i => ({ id: i.id, name: i.name }));
-          return res.json({
-            location: locationName,
-            period: periodName,
-            date: today,
-            items: simple,
-            totalItems: simple.length,
-            note: 'Returned via last-resort fallback (any items for today)'
-          });
-        }
-      } catch (e) {
-        console.error('Last-resort fallback error:', e);
-      }
-    }
-    res.json({
-      location: location.name,
-      period: period.name,
-      date: dateToUse,
-      items: formattedItems,
-      totalItems: formattedItems.length
-    });
-    
-  } catch (error) {
-    console.error('Error in /api/menu/:hall/:meal:', error);
-    res.status(500).json({ 
-      error: 'Internal server error',
-      message: error.message
+  if (!locations || locations.length === 0) {
+    throw new HttpError(404, `No menu data stored for ${locationName}.`, {
+      code: 'NO_MENU_DATA',
+      hint: 'Run the scraper from a residential IP: cd backend-folder && node run-scrape.js',
     });
   }
-});
 
-// Health check endpoint
+  const age = ageInDays(dateToUse, currentDate) || 0;
+  if (age > MAX_FALLBACK_AGE_DAYS) {
+    throw new HttpError(404, `The newest stored menu for ${locationName} is ${age} days old.`, {
+      code: 'NO_MENU_DATA',
+      ageDays: age,
+      hint: 'The scraper has not run recently: cd backend-folder && node run-scrape.js',
+    });
+  }
+
+  let location = null;
+  let period = null;
+
+  for (const loc of locations) {
+    const periods = unwrap(
+      await supabase
+        .from('periods').select('id, name, date')
+        .eq('location_id', loc.id).eq('name', periodName).eq('date', dateToUse),
+      'looking up periods'
+    );
+
+    for (const candidate of periods || []) {
+      const stations = unwrap(
+        await supabase
+          .from('stations').select('id')
+          .eq('period_id', candidate.id).eq('date', dateToUse).limit(1),
+        'checking for stations'
+      );
+      if (stations && stations.length) {
+        location = loc;
+        period = candidate;
+        break;
+      }
+    }
+    if (period) break;
+  }
+
+  if (!period) {
+    throw new HttpError(404, `No ${periodName} menu for ${locationName} on ${dateToUse}.`, {
+      code: 'PERIOD_NOT_SERVED',
+    });
+  }
+
+  const stations = unwrap(
+    await supabase
+      .from('stations').select('id, name')
+      .eq('period_id', period.id).eq('date', dateToUse),
+    'fetching stations'
+  );
+
+  if (!stations || stations.length === 0) {
+    return res.json({
+      location: location.name, period: period.name, date: dateToUse, ageDays: age, items: [], totalItems: 0,
+    });
+  }
+
+  const stationIds = stations.map(s => s.id);
+
+  // The embedded select needs the nutrients foreign key to be visible to
+  // PostgREST. Fall back to flat columns rather than failing the request.
+  const joined = await supabase
+    .from('menu_items')
+    .select(`
+      id, name, calories, portion, is_vegetarian, is_vegan, is_high_protein, station_id,
+      nutrients(name, value, uom, value_numeric)
+    `)
+    .eq('date', dateToUse).in('station_id', stationIds);
+
+  let items;
+  if (joined.error) {
+    console.warn('nutrient join unavailable, using flat columns:', joined.error.message);
+    items = unwrap(
+      await supabase
+        .from('menu_items')
+        .select('id, name, calories, portion, is_vegetarian, is_vegan, is_high_protein, station_id')
+        .eq('date', dateToUse).in('station_id', stationIds),
+      'fetching menu items'
+    );
+  } else {
+    items = joined.data;
+  }
+
+  const stationNames = Object.fromEntries(stations.map(s => [s.id, s.name]));
+
+  const formatted = (items || []).map(item => {
+    const nutrients = item.nutrients || [];
+    const find = keyword => {
+      const match = nutrients.find(n => (n.name || '').toLowerCase().includes(keyword));
+      return match ? `${match.value}${match.uom ? ` ${match.uom}` : ''}`.trim() : null;
+    };
+    return {
+      id: item.id,
+      name: item.name,
+      calories: item.calories != null ? item.calories : null,
+      portion: item.portion || null,
+      station: stationNames[item.station_id] || null,
+      isVegetarian: Boolean(item.is_vegetarian),
+      isVegan: Boolean(item.is_vegan),
+      isHighProtein: Boolean(item.is_high_protein),
+      protein: find('protein'),
+      fat: find('total fat'),
+      carbs: find('total carbohydrate'),
+      fiber: find('dietary fiber'),
+      sodium: find('sodium'),
+      sugar: find('total sugar'),
+      description: null,
+    };
+  });
+
+  res.json({
+    location: location.name,
+    period: period.name,
+    date: dateToUse,
+    ageDays: age,
+    items: formatted,
+    totalItems: formatted.length,
+  });
+}));
+
+app.get('/api/hours', route(async (req, res) => {
+  const { data, error } = await supabase
+    .from('hall_hours')
+    .select('location_name, day_of_week, slot_index, opens_at, closes_at, closed, fetched_at')
+    .order('location_name').order('day_of_week').order('slot_index');
+
+  // A missing table just means the migration has not been applied yet, which
+  // the page handles by showing its bundled schedule.
+  const missingTable = error && (
+    error.code === '42P01' ||
+    error.code === 'PGRST205' ||
+    /does not exist|could not find the table/i.test(error.message || '')
+  );
+  if (error && !missingTable) throw new HttpError(502, `Reading hall_hours: ${error.message}`);
+
+  const rows = error ? [] : (data || []);
+  if (rows.length === 0) {
+    return res.json({ source: 'empty', fetchedAt: null, ageDays: null, halls: [] });
+  }
+
+  const toHourMinute = value => {
+    const match = typeof value === 'string' ? value.match(/^(\d{2}):(\d{2})/) : null;
+    return match ? `${match[1]}:${match[2]}` : null;
+  };
+
+  const byLocation = new Map();
+  let newestFetch = null;
+
+  for (const row of rows) {
+    if (!byLocation.has(row.location_name)) byLocation.set(row.location_name, new Map());
+    const days = byLocation.get(row.location_name);
+    if (!days.has(row.day_of_week)) {
+      days.set(row.day_of_week, { day: row.day_of_week, closed: true, slots: [] });
+    }
+
+    const day = days.get(row.day_of_week);
+    const opens = toHourMinute(row.opens_at);
+    const closes = toHourMinute(row.closes_at);
+    if (!row.closed && opens && closes) {
+      day.slots.push({ opens, closes });
+      day.closed = false;
+    }
+
+    if (row.fetched_at && (!newestFetch || row.fetched_at > newestFetch)) newestFetch = row.fetched_at;
+  }
+
+  const halls = [...byLocation.entries()].map(([locationName, days]) => ({
+    locationName,
+    days: [...days.values()].sort((a, b) => a.day - b.day),
+  }));
+
+  res.json({ source: 'live', fetchedAt: newestFetch, ageDays: ageInDays(newestFetch), halls });
+}));
+
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Root endpoint
 app.get('/', (req, res) => {
-  res.json({ 
-    message: 'NU Rate-ON Backend API',
+  res.json({
+    message: 'NU Rate-ON development API',
     endpoints: {
-      menu: '/api/menu/:hall/:meal?station=:station&dietary=:dietary',
-      health: '/health'
-    }
+      menu: '/api/menu/:hall/:meal',
+      hours: '/api/hours',
+      health: '/health',
+    },
   });
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
-  console.log(`API endpoints available at http://localhost:${PORT}/api`);
+  console.log(`Development API listening on http://localhost:${PORT}`);
 });

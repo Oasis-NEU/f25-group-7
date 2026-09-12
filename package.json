@@ -2,31 +2,15 @@
     "name": "f25-group-7",
     "private": true,
     "version": "1.0.0",
-    "dependencies": {
-        "@gsap/react": "^2.1.2",
-        "@radix-ui/react-toast": "^1.2.15",
-        "@supabase/supabase-js": "^2.81.0",
-        "class-variance-authority": "^0.7.1",
-        "clsx": "^2.1.1",
-        "dotenv": "^17.2.3",
-        "embla-carousel-react": "^8.6.0",
-        "framer-motion": "^12.23.24",
-        "gsap": "^3.13.0",
-        "install": "^0.13.0",
-        "lucide-react": "^0.553.0",
-        "motion": "^12.23.24",
-        "npm": "^11.6.0",
-        "puppeteer": "^24.29.1",
-        "react-router-dom": "^7.9.5",
-        "supabase": "^2.58.5",
-        "tailwind-merge": "^3.4.0"
-    },
     "type": "module",
     "scripts": {
         "dev": "concurrently --names \"API,UI\" --prefix-colors \"magenta.bold,cyan.bold\" --kill-others-on-fail \"npm run dev --prefix backend-folder\" \"npm run dev --prefix front-end\"",
         "dev:backend": "npm run dev --prefix backend-folder",
         "dev:frontend": "npm run dev --prefix front-end",
-        "scrape": "node backend-folder/run-scrape.js"
+        "scrape": "npm run scrape --prefix backend-folder",
+        "test": "npm test --prefix front-end",
+        "lint": "npm run lint --prefix front-end",
+        "build": "npm run build --prefix front-end"
     },
     "devDependencies": {
         "concurrently": "^8.2.0"
