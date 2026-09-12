@@ -2,9 +2,9 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
-// The dev API (backend-folder) listens on 3000 by default. Override both with
-// API_PROXY_TARGET / PORT when something else already owns that port.
-const apiTarget = process.env.API_PROXY_TARGET || 'http://localhost:3000'
+// The dev API (backend-folder) listens on 3001. Override with API_PROXY_TARGET
+// here and PORT there if something else already owns that port.
+const apiTarget = process.env.API_PROXY_TARGET || 'http://localhost:3001'
 
 // https://vite.dev/config/
 export default defineConfig({

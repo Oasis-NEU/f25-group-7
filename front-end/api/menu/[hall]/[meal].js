@@ -1,4 +1,4 @@
-import { ageInDays, getSupabase, today, unwrap, withErrorHandling, HttpError } from '../../_lib/api.js';
+import { ageInDays, getSupabase, today, unwrap, withErrorHandling, HttpError } from '../../../lib/api.js';
 
 /**
  * How far back the fallback will reach when today has not been scraped.

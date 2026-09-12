@@ -10,7 +10,8 @@ const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+// 3000 collides with almost every other dev server, so default higher.
+const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());

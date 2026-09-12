@@ -6,7 +6,7 @@
  * is missing or unpopulated, so the page can fall back to its bundled
  * schedule instead of showing a failure.
  */
-import { ageInDays, getSupabase, withErrorHandling, HttpError } from './_lib/api.js';
+import { ageInDays, getSupabase, withErrorHandling, HttpError } from '../lib/api.js';
 
 /** Postgres returns time as HH:MM:SS. The UI only needs HH:MM. */
 function toHourMinute(value) {

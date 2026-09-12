@@ -1,9 +1,10 @@
 /**
  * Shared plumbing for the serverless functions under front-end/api.
  *
- * Vercel ignores files and folders in /api whose name starts with an
- * underscore, so this module ships with the functions without becoming a
- * route of its own.
+ * This lives outside api/ on purpose. Everything inside that directory is
+ * turned into a route, so a helper kept there would need Vercel's
+ * underscore-exclusion rule to stay private. Out here it is unambiguously
+ * just a module that the functions import.
  */
 import { createClient } from '@supabase/supabase-js';
 

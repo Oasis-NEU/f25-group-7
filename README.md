@@ -33,17 +33,17 @@ SQL editor or the CLI.
 ## Running
 
 ```bash
-npm run dev      # dev API on :3000 and the UI on :5173
+npm run dev      # dev API on :3001 and the UI on :5173
 npm test         # unit and API handler tests
 npm run lint
 npm run build
 ```
 
-If something already owns port 3000, point the proxy elsewhere:
+If something already owns port 3001, point both ends elsewhere:
 
 ```bash
-PORT=3011 npm run dev:backend
-API_PROXY_TARGET=http://localhost:3011 npm run dev:frontend
+PORT=3021 npm run dev:backend
+API_PROXY_TARGET=http://localhost:3021 npm run dev:frontend
 ```
 
 ## Loading menu and hours data

@@ -1,7 +1,7 @@
 import { test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { setSupabaseClient, today } from '../api/_lib/api.js';
+import { setSupabaseClient, today } from '../lib/api.js';
 import { invoke, setRows, stubClient } from './helpers/supabase-stub.js';
 import hoursHandler from '../api/hours.js';
 import menuHandler from '../api/menu/[hall]/[meal].js';

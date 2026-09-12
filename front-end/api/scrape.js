@@ -7,7 +7,7 @@
  * connection. This endpoint is kept for the case where the request does get
  * through, and it now reports the block clearly instead of timing out.
  */
-import { getSupabase, today, unwrap, withErrorHandling, HttpError, ConfigError } from './_lib/api.js';
+import { getSupabase, today, unwrap, withErrorHandling, HttpError, ConfigError } from '../lib/api.js';
 
 export const config = { maxDuration: 60 };
 
