@@ -36,12 +36,19 @@ export async function getDishNotes(dishId, max = 20) {
   return snap.docs.map(fromSnap);
 }
 
-/** The newest notes across campus, for the feed. */
-export async function getRecentNotes(max = 40) {
+/**
+ * The newest notes across campus, for the feed, a page at a time. Pass the
+ * last note's updatedAt as `before` for the next page. Each note shown costs
+ * one read, so pages stay small.
+ */
+export async function getRecentNotes(max = 20, before = null) {
   const fb = await firebase();
   if (!fb) return [];
   const { db: store, dbApi } = fb;
-  const snap = await dbApi.getDocs(dbApi.query(dbApi.collectionGroup(store, 'notes'), dbApi.orderBy('updatedAt', 'desc'), dbApi.limit(max)));
+  const parts = [dbApi.orderBy('updatedAt', 'desc')];
+  if (before != null) parts.push(dbApi.startAfter(before));
+  parts.push(dbApi.limit(max));
+  const snap = await dbApi.getDocs(dbApi.query(dbApi.collectionGroup(store, 'notes'), ...parts));
   return snap.docs.map(fromSnap);
 }
 

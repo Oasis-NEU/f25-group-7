@@ -11,9 +11,10 @@ import { mergeSlots, nextOpening, openState, toMinutes } from '../functions/hour
 import { NoHoursNotice } from './Hours';
 import { loadMenu, peekCachedMenu } from '../data/menu';
 import { curateMenu, stablePicks } from '../data/curate';
-import { pickCurrentPeriod } from '../data/halls';
+import { hallBySlug, pickCurrentPeriod } from '../data/halls';
 import { useNewToday } from '../lib/useNewToday';
 import { DishRow } from '../ui/menu/DishList';
+import { DirectionsLink } from '../ui/Directions';
 import { MenuContext } from '../ui/menu/menuContext';
 import { useCampusScores, useRanks } from '../state/ranks';
 import { dishId } from '../data/ranking';
@@ -135,9 +136,12 @@ function HallColumn({ hall, now }) {
           <p className="border-t border-line px-4 py-4 text-sm text-ink-muted">{target ? hall.description : 'No more meals today.'}</p>
         )}
 
-        <Link to={target ? menuLink : tomorrowLink} className="mt-auto flex min-h-12 items-center justify-between border-t border-line px-4 text-sm font-semibold text-brand-text hover:bg-surface-2">
-          {target ? (meal ? `Full ${meal.toLowerCase()} menu` : 'Menus') : 'Tomorrow’s menu'} <ChevronRight className="size-4" aria-hidden="true" />
-        </Link>
+        <div className="mt-auto flex items-center justify-between gap-3 border-t border-line px-4">
+          <Link to={target ? menuLink : tomorrowLink} className="inline-flex min-h-12 items-center gap-1 text-sm font-semibold text-brand-text hover:underline">
+            {target ? (meal ? `Full ${meal.toLowerCase()} menu` : 'Menus') : 'Tomorrow’s menu'} <ChevronRight className="size-4" aria-hidden="true" />
+          </Link>
+          <DirectionsLink hall={hallBySlug(hall.slug) ?? hall} />
+        </div>
       </section>
     </MenuContext.Provider>
   );

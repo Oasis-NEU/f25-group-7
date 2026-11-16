@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Navigate, Route, Routes } from 'react-router-d
 import { AuthProvider, RequireAuth } from './state/auth';
 import { HoursProvider } from './state/hours';
 import { RanksProvider } from './state/ranks';
+import { FeedbackProvider } from './state/feedback';
 import { AppShell } from './layout/AppShell';
 import { ErrorBoundary } from './ui/ErrorBoundary';
 import { PageSpinner } from './ui/Spinner';
@@ -29,6 +30,7 @@ export default function App() {
       <Router>
         <AuthProvider>
           <RanksProvider>
+          <FeedbackProvider>
           <HoursProvider>
             <Suspense fallback={<PageSpinner />}>
               <Routes>
@@ -55,6 +57,7 @@ export default function App() {
               </Routes>
             </Suspense>
           </HoursProvider>
+          </FeedbackProvider>
           </RanksProvider>
         </AuthProvider>
       </Router>

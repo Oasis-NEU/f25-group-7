@@ -6,7 +6,7 @@ import { test, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { initializeTestEnvironment, assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, deleteDoc, writeBatch, increment, collection, collectionGroup, query, where, orderBy, limit, getDocs, getCountFromServer } from 'firebase/firestore';
+import { doc, getDoc, setDoc, addDoc, deleteDoc, writeBatch, increment, collection, collectionGroup, query, where, orderBy, limit, getDocs, getCountFromServer } from 'firebase/firestore';
 
 let env;
 const DISH = 'stetson-east~huli-huli-chicken';
@@ -98,6 +98,17 @@ test('notes: public to read, written only by a verified ranker, labelled with th
   assert.equal(feed.size, 1);
   await assertFails(deleteDoc(doc(husky('mallory'), path)));
   await assertSucceeds(deleteDoc(doc(husky(), path)));
+});
+
+test('feedback: anyone can send it, nobody can read it back', async () => {
+  const fb = { kind: 'bug', message: 'The menu did not load on my phone.', page: '/menu/stetson-east', theme: 'dark', viewport: 390, ua: 'test', createdAt: 1 };
+  await assertSucceeds(addDoc(collection(anonymous(), 'feedback'), fb));
+  await assertSucceeds(addDoc(collection(husky(), 'feedback'), { ...fb, uid: 'alice', email: 'alice@northeastern.edu' }));
+  await assertFails(addDoc(collection(husky(), 'feedback'), { ...fb, uid: 'mallory' }), 'cannot sign as someone else');
+  await assertFails(addDoc(collection(anonymous(), 'feedback'), { ...fb, kind: 'spam' }));
+  await assertFails(addDoc(collection(anonymous(), 'feedback'), { ...fb, message: 'x'.repeat(1001) }));
+  await assertFails(addDoc(collection(anonymous(), 'feedback'), { ...fb, extra: true }));
+  await assertFails(getDocs(collection(husky(), 'feedback')), 'not readable from the app');
 });
 
 test('your rankings, list and tracker logs are private', async () => {

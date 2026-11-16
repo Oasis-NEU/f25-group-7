@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { CalendarClock, ChevronDown, House, LogIn, LogOut, Star, Trophy, Activity } from 'lucide-react';
+import { CalendarClock, ChevronDown, House, LogIn, LogOut, MessageSquarePlus, Star, Trophy, Activity } from 'lucide-react';
+import { useFeedback } from '../state/feedback';
 import { ThemeToggle } from '../ui/ThemeToggle';
 import { resendVerification } from '../backend/account';
 import { Logo } from '../ui/Logo';
@@ -20,6 +21,7 @@ const isActive = (item, pathname) => item.match.some(prefix => pathname.startsWi
 
 function AccountMenu() {
   const { user, ready, available, signOut } = useAuth();
+  const feedback = useFeedback();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const navigate = useNavigate();
@@ -69,6 +71,14 @@ function AccountMenu() {
             <p className="truncate text-sm font-semibold">{user.email}</p>
           </div>
           <div className="p-1.5">
+            <button
+              role="menuitem"
+              type="button"
+              onClick={() => { setOpen(false); feedback.open(); }}
+              className="flex min-h-11 w-full items-center gap-2 rounded-xl px-3 text-sm font-semibold hover:bg-surface-2"
+            >
+              <MessageSquarePlus className="size-4" aria-hidden="true" /> Send feedback
+            </button>
             <button
               role="menuitem"
               type="button"
@@ -124,13 +134,19 @@ function VerifyBanner() {
 }
 
 function Footer() {
+  const feedback = useFeedback();
   return (
     <footer className="mt-16 w-full border-t border-card-line bg-surface text-sm text-ink-muted">
-      <div className="flex w-full flex-col gap-2 px-4 pb-28 pt-6 sm:flex-row sm:items-center sm:justify-between sm:px-6 md:pb-6 lg:px-8">
+      <div className="flex w-full flex-col gap-3 px-4 pb-28 pt-6 sm:flex-row sm:items-center sm:justify-between sm:px-6 md:pb-6 lg:px-8">
         <p>Menus and hours come live from DineOnCampus. Times can change during breaks and holidays.</p>
-        <a href={OFFICIAL_SITE} target="_blank" rel="noreferrer" className="font-semibold text-ink underline underline-offset-4">
-          Official dining site
-        </a>
+        <div className="flex flex-wrap items-center gap-x-5">
+          <button type="button" onClick={() => feedback.open()} className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-brand-text hover:underline">
+            <MessageSquarePlus className="size-4" aria-hidden="true" /> Send feedback
+          </button>
+          <a href={OFFICIAL_SITE} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center font-semibold text-ink underline underline-offset-4">
+            Official dining site
+          </a>
+        </div>
       </div>
     </footer>
   );

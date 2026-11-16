@@ -56,9 +56,14 @@ export const Vote = () => {
   const nextPeriod = getNextPeriod();
 
   // All-time cumulative totals, refetched on any Realtime event
+  // Totals are count queries (a read per thousand votes), so they refresh
+  // every 30 seconds; the feed reads one document per vote shown, so it
+  // refreshes every two minutes and after your own vote.
   const fetchTotals = useCallback(async () => {
-    const [totals, latest] = await Promise.all([getTotals(), getRecentVotes(15).catch(() => null)]);
-    setVotes(totals);
+    setVotes(await getTotals());
+  }, []);
+  const fetchRecent = useCallback(async () => {
+    const latest = await getRecentVotes(15).catch(() => null);
     if (latest) setRecent(latest);
   }, []);
 
@@ -68,13 +73,13 @@ export const Vote = () => {
     try {
       // Totals and the feed are public; your own meals only when signed in.
       setVotedPeriods(user ? await getMyMeals(user.id, today) : []);
-      await fetchTotals();
+      await Promise.all([fetchTotals(), fetchRecent()]);
       setStatus('ready');
     } catch (err) {
       console.error('Loading votes failed', err);
       setStatus('error');
     }
-  }, [user, today, fetchTotals]);
+  }, [user, today, fetchTotals, fetchRecent]);
 
   useEffect(() => {
     load();
@@ -84,6 +89,7 @@ export const Vote = () => {
     // votes update instantly through the optimistic state below.
     const refreshTotals = () => { if (document.visibilityState === 'visible') fetchTotals().catch(() => {}); };
     const poll = setInterval(refreshTotals, 30_000);
+    const pollFeed = setInterval(() => { if (document.visibilityState === 'visible') fetchRecent(); }, 120_000);
 
     // Keep meal period state fresh every minute
     const clock = setInterval(() => {
@@ -91,8 +97,8 @@ export const Vote = () => {
       setCurrentPeriod(getCurrentPeriod());
     }, 60_000);
 
-    return () => { clearInterval(poll); clearInterval(clock); };
-  }, [user, load, fetchTotals]);
+    return () => { clearInterval(poll); clearInterval(pollFeed); clearInterval(clock); };
+  }, [user, load, fetchTotals, fetchRecent]);
 
   const handleVote = async (option) => {
     if (!canVote || !user) return;

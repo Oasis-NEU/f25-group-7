@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ChevronDown, ExternalLink, RefreshCw, Search, SlidersHorizontal, UtensilsCrossed, WifiOff, X } from 'lucide-react';
 import { Dialog } from '../ui/Dialog';
+import { DirectionsLink } from '../ui/Directions';
+import { useFeedback } from '../state/feedback';
 import { loadMenu, menuNotice, peekLikelyMenu } from '../data/menu';
 import { curateMenu, stablePicks } from '../data/curate';
 import { useNewToday } from '../lib/useNewToday';
@@ -112,6 +114,8 @@ export default function Menu() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [newOnly, setNewOnly] = useState(false);
+  const [stationFilter, setStationFilter] = useState(null);
+  const feedback = useFeedback();
 
   const toggle = (setter, key) => setter(prev => {
     const next = new Set(prev);
@@ -194,6 +198,16 @@ export default function Menu() {
       .map(x => x.d);
   }, [allDishes, scores, hall, query, diets, avoid, yourFavorites, newOnly]);
 
+  // A station chosen on one menu means nothing on another.
+  useEffect(() => { setStationFilter(null); }, [hall?.slug, date, mealSlug]);
+  const chooseStation = useCallback(name => {
+    setStationFilter(name);
+    const top = document.getElementById('stations-top');
+    if (top && top.getBoundingClientRect().top < 0) {
+      top.scrollIntoView({ block: 'start', behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    }
+  }, []);
+
   const periods = result?.periods?.length ? result.periods : DEFAULT_MEALS;
   const activeMeal = result?.period?.slug ?? mealSlug;
   // The bill: dishes you loved, then campus favorites, then the picks, with
@@ -246,6 +260,8 @@ export default function Menu() {
     ...(view.bars.length ? [{ name: 'build-your-own', label: 'Build your own', count: view.bars.length, unit: 'bar' }] : []),
     ...view.sweets.map(s => ({ ...s, count: s.dishes.length })),
   ];
+  // A search can hide the chosen station; then everything shows again.
+  const activeStation = anchors.some(a => a.name === stationFilter) ? stationFilter : null;
 
   return (
     <MenuContext.Provider value={menuContext}>
@@ -253,7 +269,7 @@ export default function Menu() {
       <h1 className="sr-only">{hall.name}, {mealName.toLowerCase()} {dayWord.toLowerCase()}</h1>
 
       {/* One line of context; the pickers live in a sheet (inline on wide screens). */}
-      <div className="sticky top-16 z-30 -mx-4 bg-bg px-4 pb-3 pt-1 lg:hidden">
+      <div className="-mx-4 px-4 pb-3 pt-1 lg:hidden">
         <button
           type="button"
           onClick={() => setPickerOpen(true)}
@@ -403,7 +419,10 @@ export default function Menu() {
         </div>
       </Dialog>
 
-      <p className="mb-5 text-sm text-ink-muted">{statusLine}</p>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4">
+        <p className="text-sm text-ink-muted">{statusLine}</p>
+        <DirectionsLink hall={hall} />
+      </div>
 
       <SourceNotice result={result} />
 
@@ -494,7 +513,8 @@ export default function Menu() {
             />
           )}
 
-          <StationRail stations={anchors.map(s => ({ name: s.name, label: s.label, count: s.count, unit: s.unit }))} />
+          <StationRail stations={anchors.map(s => ({ name: s.name, label: s.label }))} active={activeStation} onSelect={chooseStation} />
+          <div id="stations-top" className="scroll-mt-32" />
 
           {/* Counts matter while filtering; otherwise the stations speak for themselves. */}
           <p className={`mb-6 flex flex-wrap items-center gap-x-3 text-sm text-ink-muted ${filtering ? '' : 'sr-only'}`} role="status">
@@ -514,9 +534,9 @@ export default function Menu() {
           ) : (
             <div className="space-y-7 lg:columns-2 lg:gap-6 lg:space-y-0 xl:columns-3 [&>*]:lg:mb-7 [&>*]:lg:break-inside-avoid">
               {/* Two independent columns on wide screens: cards stack top to bottom, so short and long stations never leave gaps. */}
-              {view.plated.map(station => <StationCard key={`${station.name}|${filtering}`} station={station} expanded={filtering} />)}
-              <BuildBars key={`bars|${filtering}`} bars={view.bars} expanded={filtering} />
-              {view.sweets.map(station => <StationCard key={`${station.name}|${filtering}`} station={station} expanded={filtering} />)}
+              {view.plated.filter(st => !activeStation || st.name === activeStation).map(station => <StationCard key={`${station.name}|${filtering}|${activeStation}`} station={station} expanded={filtering || Boolean(activeStation)} />)}
+              {(!activeStation || activeStation === 'build-your-own') && <BuildBars key={`bars|${filtering}|${activeStation}`} bars={view.bars} expanded={filtering || Boolean(activeStation)} />}
+              {view.sweets.filter(st => !activeStation || st.name === activeStation).map(station => <StationCard key={`${station.name}|${filtering}|${activeStation}`} station={station} expanded={filtering || Boolean(activeStation)} />)}
             </div>
           )}
         </div>
@@ -524,6 +544,12 @@ export default function Menu() {
 
       {!showSkeleton && result && result.status !== 'ok' && (
         <MenuEmpty result={result} hall={hall} date={date} dayWord={dayWord.toLowerCase()} onRetry={retry} retrying={loading} dateQuery={dateQuery} mealSlug={mealSlug} />
+      )}
+      {!showSkeleton && result?.status === 'ok' && (
+        <p className="mt-10 text-center text-sm text-ink-muted">
+          Something wrong with this menu?{' '}
+          <button type="button" onClick={() => feedback.open({ kind: 'menu', dish: `${hall.name} · ${mealName} · ${formatIsoDate(date, { weekday: 'short', month: 'short', day: 'numeric' })}` })} className="min-h-11 font-semibold text-brand-text hover:underline">Tell us</button>
+        </p>
       )}
       <DishSheet item={detail} open={Boolean(detail)} onClose={() => setDetail(null)} periodSlug={result?.period?.slug} />
       <RankSheet dish={ranking} open={Boolean(ranking)} onClose={() => setRanking(null)} />
