@@ -1,6 +1,6 @@
-import { useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, ChevronDown, ChevronRight, Plus } from 'lucide-react';
+import { Check, ChevronDown, ChevronRight, Dices, Plus } from 'lucide-react';
 import { Button } from '../Button';
 import { Dialog } from '../Dialog';
 import { useAuth } from '../../state/auth';
@@ -115,7 +115,7 @@ export function DishSheet({ item, open, onClose, periodSlug }) {
   const meta = metaLine(dish, { showStation: true });
 
   return (
-    <Dialog open={open} onClose={onClose} title={dish.name} description={[dish.isNew ? 'New today' : null, meta || null].filter(Boolean).join(' · ') || undefined} size="lg">
+    <Dialog open={open} onClose={onClose} title={dish.name} description={joinFacts([dish.isNew ? 'New today' : null, ...(meta ? meta.split(' · ') : [])]) || undefined} size="lg">
       <div className="space-y-6">
         {hasRealDescription(dish) && <p className="text-base text-ink-muted">{dish.description}</p>}
 
@@ -207,7 +207,7 @@ export function DishRow({ item, showStation = false, hall = null, to = null }) {
 }
 
 /** A top pick as a tile on the shelf. */
-function PickTile({ item }) {
+function PickTile({ item, lit = false }) {
   const ctx = useMenuContext();
   const { campus, yours } = useScores(item);
   const firstDiet = dietWords(item).split(' · ')[0] || null;
@@ -216,7 +216,7 @@ function PickTile({ item }) {
       <button
         type="button"
         onClick={() => ctx.show?.(item)}
-        className="flex h-full min-h-40 w-full flex-col rounded-card border border-card-line bg-surface p-4 text-left shadow-card transition-transform duration-150 ease-apple active:scale-[0.98]"
+        className={`flex h-full min-h-40 w-full flex-col rounded-card border bg-surface p-4 text-left shadow-card transition-[transform,border-color,box-shadow] duration-150 ease-apple active:scale-[0.98] ${lit ? 'scale-[1.03] border-brand-text ring-2 ring-brand-text' : 'border-card-line'}`}
       >
         <span className="block truncate text-[0.8125rem] text-ink-muted">{item.stationLabel}{item.isNew && <NewTag />}</span>
         <span className="mt-2 line-clamp-2 text-[1.0625rem] font-semibold leading-snug">{item.name}</span>
@@ -234,22 +234,78 @@ function PickTile({ item }) {
 }
 
 /** The swipeable row of picks at the top of a menu. */
+/**
+ * "Decide for me": a light runs along the shelf like a slot reel, slows down,
+ * and stops on one dish, whose sheet then opens. With reduced motion it simply
+ * picks. The pick is random among the shelf, weighted toward the front, where
+ * the best-ranked and loved dishes sit.
+ */
+function useDecide(items, onPick) {
+  const [lit, setLit] = useState(null);
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+
+  function decide(listEl) {
+    if (!items.length || lit != null) return;
+    const n = items.length;
+    const weights = items.map((_, i) => n - i);
+    let r = Math.random() * weights.reduce((a, b) => a + b, 0);
+    let target = 0;
+    while (r >= weights[target]) { r -= weights[target]; target += 1; }
+    const show = i => {
+      setLit(i);
+      listEl?.children[i]?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    };
+    const finish = () => { setLit(null); onPick(items[target]); };
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) { show(target); timers.current.push(setTimeout(finish, 250)); return; }
+    // Two laps then the target, each step a little slower than the last.
+    const steps = Math.min(n, 8) * 2 + target + 1;
+    let t = 0;
+    for (let k = 0; k < steps; k++) {
+      t += 55 + 230 * Math.pow(k / steps, 2.2);
+      const i = k % n;
+      timers.current.push(setTimeout(() => show(i), t));
+    }
+    timers.current.push(setTimeout(finish, t + 420));
+  }
+  return { lit, decide, spinning: lit != null };
+}
+
+/** The swipeable row of picks at the top of a menu. */
 export function PicksShelf({ title, note, noteDetail, onNote, items }) {
+  const ctx = useMenuContext();
+  const listRef = useRef(null);
+  const [picked, setPicked] = useState('');
+  const { lit, decide, spinning } = useDecide(items, item => { setPicked(`Picked ${item.name}`); ctx.show?.(item); });
   if (!items.length) return null;
   return (
     <section aria-labelledby="picks-heading" className="mb-8">
-      <div className="mb-3 flex items-baseline justify-between gap-3">
-        <h2 id="picks-heading" className="text-xl font-semibold">{title}</h2>
-        {/* "New" is inferred by comparing neighbouring days; the detail says which. */}
-        {note && (
-          <button type="button" onClick={onNote} title={noteDetail || undefined} className="min-h-11 text-sm font-semibold text-brand-text">
-            {note}{noteDetail && <span className="sr-only">. {noteDetail}</span>}
+      <div className="mb-3 flex items-end justify-between gap-3">
+        <div className="min-w-0">
+          <h2 id="picks-heading" className="text-xl font-semibold">{title}</h2>
+          {/* "New" is inferred by comparing neighbouring days; the detail says which. */}
+          {note && (
+            <button type="button" onClick={onNote} title={noteDetail || undefined} className="min-h-9 text-sm font-semibold text-brand-text">
+              {note}{noteDetail && <span className="sr-only">. {noteDetail}</span>}
+            </button>
+          )}
+        </div>
+        {items.length > 1 && ctx.show && (
+          <button
+            type="button"
+            onClick={() => decide(listRef.current)}
+            disabled={spinning}
+            className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full bg-surface-2 px-4 text-sm font-semibold transition-colors hover:bg-surface-3 disabled:opacity-70"
+          >
+            <Dices className={`size-4 ${spinning ? 'animate-spin' : ''}`} aria-hidden="true" />
+            {spinning ? 'Picking…' : 'Decide for me'}
           </button>
         )}
       </div>
+      <p className="sr-only" role="status">{picked}</p>
       {/* Keyed by its dishes: when scores reorder the shelf it starts again from the first tile. */}
-      <ul key={items.map(i => i.id).join('|')} className="relative -mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-1 scrollbar-none sm:mx-0 sm:scroll-px-0 sm:px-0">
-        {items.map(item => <PickTile key={item.id} item={item} />)}
+      <ul ref={listRef} key={items.map(i => i.id).join('|')} className={`relative -mx-4 flex scroll-px-4 gap-3 overflow-x-auto px-4 pb-2 pt-1 scrollbar-none sm:mx-0 sm:scroll-px-0 sm:px-0 ${spinning ? '' : 'snap-x snap-mandatory'}`}>
+        {items.map((item, i) => <PickTile key={item.id} item={item} lit={lit === i} />)}
       </ul>
     </section>
   );
@@ -344,7 +400,7 @@ export function BuildBars({ bars, expanded = false }) {
 export function StationRail({ stations }) {
   if (stations.length < 2) return null;
   return (
-    <nav aria-label="Stations" className="sticky top-16 z-30 -mx-4 mb-6 bg-bg py-2 sm:mx-0">
+    <nav aria-label="Stations" className="-mx-4 mb-6 bg-bg py-2 sm:mx-0 lg:sticky lg:top-16 lg:z-30">
       <ul className="relative flex gap-2 overflow-x-auto px-4 scrollbar-none sm:flex-wrap sm:overflow-visible sm:px-0">
         {stations.map(s => (
           <li key={s.name} className="shrink-0">

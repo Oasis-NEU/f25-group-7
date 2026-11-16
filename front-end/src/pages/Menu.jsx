@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { ExternalLink, RefreshCw, Search, UtensilsCrossed, WifiOff, X } from 'lucide-react';
+import { ChevronDown, ExternalLink, RefreshCw, Search, SlidersHorizontal, UtensilsCrossed, WifiOff, X } from 'lucide-react';
+import { Dialog } from '../ui/Dialog';
 import { loadMenu, menuNotice, peekLikelyMenu } from '../data/menu';
 import { curateMenu, stablePicks } from '../data/curate';
 import { useNewToday } from '../lib/useNewToday';
@@ -108,7 +109,8 @@ export default function Menu() {
   const [query, setQuery] = useState('');
   const [diets, setDiets] = useState(() => new Set());
   const [avoid, setAvoid] = useState(() => new Set());
-  const [showAllergens, setShowAllergens] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [newOnly, setNewOnly] = useState(false);
 
   const toggle = (setter, key) => setter(prev => {
@@ -122,6 +124,7 @@ export default function Menu() {
   const curated = useMemo(() => curateMenu(stations, { newKeys: fresh.keys }), [stations, fresh.keys]);
   const picksInOrder = useMemo(() => stablePicks(stations, fresh.keys), [stations, fresh.keys]);
   const filtering = Boolean(query.trim() || diets.size || avoid.size || newOnly);
+  const filterCount = diets.size + avoid.size + (newOnly ? 1 : 0);
 
   const view = useMemo(() => {
     const match = item => itemMatches(item, { query, diets, avoid }) && (!newOnly || item.isNew);
@@ -246,9 +249,25 @@ export default function Menu() {
 
   return (
     <MenuContext.Provider value={menuContext}>
-    <div className="mx-auto max-w-5xl">
+    <div className="mx-auto max-w-6xl">
       <h1 className="sr-only">{hall.name}, {mealName.toLowerCase()} {dayWord.toLowerCase()}</h1>
 
+      {/* One line of context; the pickers live in a sheet (inline on wide screens). */}
+      <div className="sticky top-16 z-30 -mx-4 bg-bg px-4 pb-3 pt-1 lg:hidden">
+        <button
+          type="button"
+          onClick={() => setPickerOpen(true)}
+          aria-haspopup="dialog"
+          className="flex min-h-12 w-full items-center gap-2 rounded-full bg-surface-2 pl-5 pr-4 text-left transition-colors hover:bg-surface-3"
+        >
+          <span className="min-w-0 flex-1 truncate text-[0.9375rem] font-semibold">
+            {hall.shortName ?? hall.name} · {mealName} · {dayWord}
+          </span>
+          <ChevronDown className="size-5 shrink-0 text-ink-muted" aria-hidden="true" />
+          <span className="sr-only">. Change hall, day or meal</span>
+        </button>
+      </div>
+      <div className="hidden lg:block">
       {/* Hall switch keeps the chosen day and meal. */}
       <nav aria-label="Dining hall" className="mb-3">
         <ul className="flex rounded-full bg-surface-2 p-1">
@@ -313,6 +332,77 @@ export default function Menu() {
         </ul>
       </nav>
 
+      </div>
+      <Dialog open={pickerOpen} onClose={() => setPickerOpen(false)} title="Choose a menu">
+        {/* Any choice closes the sheet; the links keep their own routes. */}
+        <div onClickCapture={e => { if (e.target.closest('a')) setPickerOpen(false); }} className="space-y-4 pb-2">
+      {/* Hall switch keeps the chosen day and meal. */}
+      <nav aria-label="Dining hall" className="mb-3">
+        <ul className="flex rounded-full bg-surface-2 p-1">
+          {HALLS.map(h => {
+            const active = h.slug === hall.slug;
+            return (
+              <li key={h.slug} className="min-w-0 flex-1">
+                <Link
+                  to={`/menu/${h.slug}${activeMeal ? `/${activeMeal}` : ''}${dateQuery}`}
+                  aria-current={active ? 'page' : undefined}
+                  className={`flex min-h-11 items-center justify-center rounded-full px-2 text-center text-sm leading-tight transition-colors
+                    ${active ? 'bg-surface font-semibold text-ink shadow-card ring-1 ring-card-line' : 'font-medium text-ink-muted hover:text-ink'}`}
+                >
+                  <span className="sm:hidden">{h.shortName}</span><span className="hidden sm:inline">{h.name}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+
+      {/* Day strip: today and the next six days. */}
+      <nav aria-label="Day" className="-mx-4 mb-1 overflow-x-auto px-4 scrollbar-none">
+        <ul className="flex gap-1">
+          {Array.from({ length: 7 }, (_, i) => addDays(today, i)).map(d => {
+            const active = d === date;
+            return (
+              <li key={d} className="shrink-0">
+                <Link
+                  to={`/menu/${hall.slug}${mealSlug ? `/${mealSlug}` : ''}${d === today ? '' : `?date=${d}`}`}
+                  aria-current={active ? 'date' : undefined}
+                  className={`flex min-h-12 min-w-12 flex-col items-center justify-center rounded-xl px-2.5 transition-colors
+                    ${active ? 'bg-ink text-bg' : 'text-ink-muted hover:bg-surface-2 hover:text-ink'}`}
+                >
+                  <span className="text-xs font-semibold leading-none">{d === today ? 'Today' : formatIsoDate(d, { weekday: 'short' })}</span>
+                  <span className="mt-1 text-sm font-semibold leading-none tabular">{formatIsoDate(d, { day: 'numeric' })}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+
+      {/* Meals actually served that day, once known. */}
+      <nav aria-label="Meal" className="mb-4 border-b border-line">
+        <ul className="flex">
+          {periods.map(p => {
+            const active = p.slug === activeMeal;
+            return (
+              <li key={p.slug} className="flex-1 sm:flex-none">
+                <Link
+                  to={`/menu/${hall.slug}/${p.slug}${dateQuery}`}
+                  aria-current={active ? 'page' : undefined}
+                  className={`relative flex min-h-11 items-center justify-center px-4 text-base transition-colors
+                    ${active ? 'font-semibold text-ink after:absolute after:inset-x-3 after:-bottom-px after:h-[3px] after:bg-brand' : 'text-ink-muted hover:text-ink'}`}
+                >
+                  {p.name}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+
+        </div>
+      </Dialog>
+
       <p className="mb-5 text-sm text-ink-muted">{statusLine}</p>
 
       <SourceNotice result={result} />
@@ -321,46 +411,78 @@ export default function Menu() {
 
       {!showSkeleton && result?.status === 'ok' && (
         <div key={`${hall.slug}|${date}|${activeMeal}`} className="animate-fade">
-          {/* Search and filters. */}
-          <div className="mb-8 space-y-2">
+          {/* Search, with every filter one button away. */}
+          <div className="mb-6 space-y-2">
             <div className="relative">
               <label htmlFor="menu-search" className="sr-only">Search this menu</label>
-              <Search className="pointer-events-none absolute left-3.5 top-1/2 size-5 -translate-y-1/2 text-ink-subtle" aria-hidden="true" />
+              <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-ink-subtle" aria-hidden="true" />
               <input
                 id="menu-search" type="search" value={query} autoComplete="off"
                 disabled={!ready}
                 onChange={e => setQuery(e.target.value)}
                 placeholder={`Search ${mealName.toLowerCase()}`}
-                className="min-h-11 w-full rounded-full bg-surface-2 pl-11 pr-11 text-base placeholder:text-ink-subtle focus:outline-2 focus:outline-brand-text disabled:opacity-60"
+                className="min-h-12 w-full rounded-full bg-surface-2 pl-12 pr-28 text-base placeholder:text-ink-subtle focus:outline-2 focus:outline-brand-text disabled:opacity-60"
               />
-              {query && (
-                <button type="button" onClick={() => setQuery('')} aria-label="Clear search"
-                  className="absolute right-1 top-1/2 grid size-10 -translate-y-1/2 place-items-center rounded-lg text-ink-muted hover:text-ink">
-                  <X className="size-5" aria-hidden="true" />
+              <div className="absolute right-1 top-1/2 flex -translate-y-1/2 items-center">
+                {query && (
+                  <button type="button" onClick={() => setQuery('')} aria-label="Clear search"
+                    className="grid size-11 place-items-center rounded-full text-ink-muted hover:text-ink">
+                    <X className="size-5" aria-hidden="true" />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setFiltersOpen(true)}
+                  disabled={!ready}
+                  aria-haspopup="dialog"
+                  className={`inline-flex min-h-10 items-center gap-1.5 rounded-full px-3.5 text-sm font-semibold transition-colors disabled:opacity-50 ${filterCount ? 'bg-ink text-bg' : 'text-ink-muted hover:bg-surface-3 hover:text-ink'}`}
+                >
+                  <SlidersHorizontal className="size-4" aria-hidden="true" />
+                  Filters{filterCount > 0 && <span className="tabular"> · {filterCount}</span>}
                 </button>
-              )}
+              </div>
             </div>
-            <div role="group" aria-label="Filters" className="relative -mx-4 flex gap-2 overflow-x-auto px-4 py-1 scrollbar-none sm:mx-0 sm:flex-wrap sm:px-0">
-              {DIET_FILTERS.map(f => (
-                <Chip key={f.key} disabled={!ready} pressed={diets.has(f.key)} onClick={() => toggle(setDiets, f.key)}>{f.label}</Chip>
-              ))}
-              {fresh.status === 'ready' && newCount > 0 && (
-                <Chip disabled={!ready} pressed={newOnly} onClick={() => setNewOnly(v => !v)}>New today · {newCount}</Chip>
-              )}
-              <Chip disabled={!ready} pressed={showAllergens || avoid.size > 0} onClick={() => setShowAllergens(v => !v)}>
-                {avoid.size ? `Avoiding ${avoid.size} allergen${avoid.size === 1 ? '' : 's'}` : 'Allergens'}
-              </Chip>
-            </div>
-            {showAllergens && (
-              <div className="rounded-card bg-surface-2 p-4">
-                <p className="text-sm font-semibold">Hide dishes that contain</p>
-                <div role="group" aria-label="Allergens to avoid" className="mt-3 flex flex-wrap gap-2">
-                  {ALLERGENS.map(a => <Chip key={a} pressed={avoid.has(a)} onClick={() => toggle(setAvoid, a)}>{a}</Chip>)}
-                </div>
-                <p className="mt-3 text-sm text-ink-muted">Based on the allergens the dining team lists. Kitchens are shared, so ask staff if an allergy is serious.</p>
+            {filterCount > 0 && (
+              <div role="group" aria-label="Active filters" className="relative -mx-4 flex gap-2 overflow-x-auto px-4 py-1 scrollbar-none sm:mx-0 sm:flex-wrap sm:px-0">
+                {newOnly && <Chip pressed onClick={() => setNewOnly(false)}>New today <X className="size-3.5" aria-hidden="true" /><span className="sr-only">, remove</span></Chip>}
+                {DIET_FILTERS.filter(f => diets.has(f.key)).map(f => (
+                  <Chip key={f.key} pressed onClick={() => toggle(setDiets, f.key)}>{f.label} <X className="size-3.5" aria-hidden="true" /><span className="sr-only">, remove</span></Chip>
+                ))}
+                {[...avoid].map(a => (
+                  <Chip key={a} pressed onClick={() => toggle(setAvoid, a)}>No {a.toLowerCase()} <X className="size-3.5" aria-hidden="true" /><span className="sr-only">, remove</span></Chip>
+                ))}
               </div>
             )}
           </div>
+
+          <Dialog
+            open={filtersOpen}
+            onClose={() => setFiltersOpen(false)}
+            title="Filters"
+            footer={(
+              <>
+                <Button variant="secondary" onClick={clearFilters} disabled={!filterCount}>Clear all</Button>
+                <Button block onClick={() => setFiltersOpen(false)}>Show {view.dishes} {view.dishes === 1 ? 'dish' : 'dishes'}</Button>
+              </>
+            )}
+          >
+            <div className="space-y-6">
+              <section aria-labelledby="f-diet">
+                <h3 id="f-diet" className="mb-2 text-sm font-semibold text-ink-muted">Diet and nutrition</h3>
+                <div className="flex flex-wrap gap-2">
+                  {fresh.status === 'ready' && newCount > 0 && <Chip pressed={newOnly} onClick={() => setNewOnly(v => !v)}>New today · {newCount}</Chip>}
+                  {DIET_FILTERS.map(f => <Chip key={f.key} pressed={diets.has(f.key)} onClick={() => toggle(setDiets, f.key)}>{f.label}</Chip>)}
+                </div>
+              </section>
+              <section aria-labelledby="f-allergens">
+                <h3 id="f-allergens" className="mb-2 text-sm font-semibold text-ink-muted">Hide dishes that contain</h3>
+                <div className="flex flex-wrap gap-2">
+                  {ALLERGENS.map(a => <Chip key={a} pressed={avoid.has(a)} onClick={() => toggle(setAvoid, a)}>{a}</Chip>)}
+                </div>
+                <p className="mt-3 text-sm text-ink-muted">From the dining team’s allergen data. Kitchens are shared, so ask staff if an allergy is serious.</p>
+              </section>
+            </div>
+          </Dialog>
 
           {!filtering && (
             <PicksShelf
@@ -374,7 +496,8 @@ export default function Menu() {
 
           <StationRail stations={anchors.map(s => ({ name: s.name, label: s.label, count: s.count, unit: s.unit }))} />
 
-          <p className="mb-6 flex flex-wrap items-center gap-x-3 text-sm text-ink-muted" role="status">
+          {/* Counts matter while filtering; otherwise the stations speak for themselves. */}
+          <p className={`mb-6 flex flex-wrap items-center gap-x-3 text-sm text-ink-muted ${filtering ? '' : 'sr-only'}`} role="status">
             {filtering
               ? (newOnly && !query.trim() && !diets.size && !avoid.size
                 ? `${view.dishes} ${view.dishes === 1 ? 'dish is' : 'dishes are'} new today${view.bars.length ? `, plus new ingredients at ${view.bars.length} build-your-own ${view.bars.length === 1 ? 'bar' : 'bars'}` : ''}.`
@@ -389,7 +512,7 @@ export default function Menu() {
               Try removing a filter or searching for something else.
             </EmptyState>
           ) : (
-            <div className="space-y-7 lg:columns-2 lg:gap-6 lg:space-y-0 [&>*]:lg:mb-7 [&>*]:lg:break-inside-avoid">
+            <div className="space-y-7 lg:columns-2 lg:gap-6 lg:space-y-0 xl:columns-3 [&>*]:lg:mb-7 [&>*]:lg:break-inside-avoid">
               {/* Two independent columns on wide screens: cards stack top to bottom, so short and long stations never leave gaps. */}
               {view.plated.map(station => <StationCard key={`${station.name}|${filtering}`} station={station} expanded={filtering} />)}
               <BuildBars key={`bars|${filtering}`} bars={view.bars} expanded={filtering} />
