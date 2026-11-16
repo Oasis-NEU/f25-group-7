@@ -13,6 +13,7 @@ export const HALLS = [
     locationName: 'The Eatery at Stetson East',
     dineId: '586d05e4ee596f6e6c04b527',
     match: /stetson\s*east/i,
+    mapQuery: 'Stetson East, Northeastern University, Boston, MA',
     aliases: ['steast'],
     description: 'The largest hall on campus, open all day with the widest choice of stations.',
   },
@@ -23,6 +24,7 @@ export const HALLS = [
     locationName: 'United Table at International Village',
     dineId: '5f4f8a425e42ad17329be131',
     match: /international\s*village/i,
+    mapQuery: 'International Village, Northeastern University, Boston, MA',
     aliases: ['iv'],
     description: 'Global cuisines on a rotating menu: Latin Kitchen, Spice Bowl, sushi and more.',
   },
@@ -33,12 +35,25 @@ export const HALLS = [
     locationName: 'Campus Roots at 60 Belvidere',
     dineId: '686d10a81fea2d6aaeb9f733',
     match: /belvidere/i,
+    mapQuery: '60 Belvidere St, Boston, MA',
     aliases: ['belvidere'],
     description: 'A smaller, quieter hall near Symphony Hall with a shorter daily schedule.',
   },
 ];
 
 /** Look a hall up by its slug or one of its aliases. */
+/**
+ * Walking directions to a hall in the visitor's maps app: Apple Maps on
+ * Apple devices, Google Maps everywhere else. Searches by the building's name
+ * rather than a street number, so nothing here can be a wrong address.
+ */
+export function directionsUrl(hall, ua = typeof navigator !== 'undefined' ? navigator.userAgent : '') {
+  const q = encodeURIComponent(hall.mapQuery ?? `${hall.name}, Northeastern University, Boston, MA`);
+  return /iPhone|iPad|iPod|Macintosh/.test(ua)
+    ? `https://maps.apple.com/?daddr=${q}&dirflg=w`
+    : `https://www.google.com/maps/dir/?api=1&destination=${q}&travelmode=walking`;
+}
+
 export function hallBySlug(slug) {
   const key = String(slug ?? '').trim().toLowerCase();
   return HALLS.find(hall => hall.slug === key || hall.aliases.includes(key)) ?? null;

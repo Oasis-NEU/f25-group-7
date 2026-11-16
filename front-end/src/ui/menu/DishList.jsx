@@ -399,17 +399,24 @@ export function BuildBars({ bars, expanded = false }) {
   );
 }
 
-/** Jump links to every station, as a scrolling row of pills. */
-export function StationRail({ stations }) {
+/**
+ * Station filter: "All" and one pill per station. Choosing one shows only that
+ * station, fully open, so nothing jumps; the chosen pill is lit.
+ */
+export function StationRail({ stations, active = null, onSelect }) {
   if (stations.length < 2) return null;
+  const pill = on => `inline-flex min-h-11 items-center rounded-full px-4 text-sm font-medium transition-colors duration-150 ${on ? 'bg-ink text-bg' : 'bg-surface-2 text-ink-muted hover:text-ink'}`;
   return (
-    <nav aria-label="Stations" className="-mx-4 mb-6 bg-bg py-2 sm:mx-0 lg:sticky lg:top-16 lg:z-30">
+    <nav aria-label="Stations" className="sticky top-16 z-30 -mx-4 mb-6 border-b border-line bg-bg py-2 sm:mx-0">
       <ul className="relative flex gap-2 overflow-x-auto px-4 scrollbar-none sm:flex-wrap sm:overflow-visible sm:px-0">
+        <li className="shrink-0">
+          <button type="button" aria-pressed={active == null} onClick={() => onSelect(null)} className={pill(active == null)}>All stations</button>
+        </li>
         {stations.map(s => (
           <li key={s.name} className="shrink-0">
-            <a href={`#${sectionId(s.name)}`} className="inline-flex min-h-11 items-center rounded-full bg-surface-2 px-4 text-sm font-medium text-ink-muted transition-colors hover:text-ink">
+            <button type="button" aria-pressed={active === s.name} onClick={() => onSelect(active === s.name ? null : s.name)} className={pill(active === s.name)}>
               {s.label}
-            </a>
+            </button>
           </li>
         ))}
       </ul>

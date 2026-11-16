@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom';
+import { hallBySlug } from '../data/halls';
+import { DirectionsLink } from '../ui/Directions';
 import { RefreshCw } from 'lucide-react';
 import { useHours } from '../state/hours';
 import { StatusText } from '../ui/HallStatus';
@@ -96,11 +98,14 @@ export default function Hours() {
       <div className="grid items-start gap-4 md:grid-cols-3">
         {halls.map(hall => (
           <section key={hall.slug} aria-labelledby={`hours-${hall.slug}`} className="overflow-hidden rounded-card border border-card-line bg-surface shadow-card">
-            <div className="px-4 pb-3 pt-4">
-              <h2 id={`hours-${hall.slug}`} className="text-lg font-semibold">
-                <Link to={`/menu/${hall.slug}`} className="hover:underline">{hall.name}</Link>
-              </h2>
-              <StatusText status={describeStatus(hall.days, now)} className="text-sm" />
+            <div className="flex items-start justify-between gap-3 px-4 pb-3 pt-4">
+              <div className="min-w-0">
+                <h2 id={`hours-${hall.slug}`} className="text-lg font-semibold">
+                  <Link to={`/menu/${hall.slug}`} className="hover:underline">{hall.name}</Link>
+                </h2>
+                <StatusText status={describeStatus(hall.days, now)} className="text-sm" />
+              </div>
+              <DirectionsLink hall={hallBySlug(hall.slug) ?? hall} className="-mt-2 shrink-0" />
             </div>
             <dl className="border-t border-line text-sm tabular">
               {hall.days.map((day, i) => (

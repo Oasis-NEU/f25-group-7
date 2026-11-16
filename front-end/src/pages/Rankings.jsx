@@ -6,7 +6,7 @@ import { BUCKETS } from '../data/ranking';
 import { hallBySlug } from '../data/halls';
 import { stationLabel } from '../data/curate';
 import { EmptyState, Notice, PageHeader } from '../ui/primitives';
-import { ButtonLink } from '../ui/Button';
+import { Button, ButtonLink } from '../ui/Button';
 import { PageSpinner } from '../ui/Spinner';
 import { RankSheet } from '../ui/rank/RankSheet';
 import { ScoreBadge } from '../ui/menu/DishList';
@@ -121,15 +121,28 @@ function YourList() {
 }
 
 /** The campus log: everyone's newest notes on any dish. */
+const PAGE = 20;
+
 function CampusFeed() {
   const [notes, setNotes] = useState(null);
   const [failed, setFailed] = useState(false);
+  const [more, setMore] = useState({ loading: false, done: false });
   const { user } = useAuth();
   useEffect(() => {
     let alive = true;
-    getRecentNotes(40).then(n => alive && setNotes(n)).catch(err => { console.error(err); if (alive) { setFailed(true); setNotes([]); } });
+    getRecentNotes(PAGE)
+      .then(n => { if (alive) { setNotes(n); setMore({ loading: false, done: n.length < PAGE }); } })
+      .catch(err => { console.error(err); if (alive) { setFailed(true); setNotes([]); } });
     return () => { alive = false; };
   }, []);
+  async function loadMore() {
+    setMore(m => ({ ...m, loading: true }));
+    try {
+      const next = await getRecentNotes(PAGE, notes[notes.length - 1]?.updatedAt);
+      setNotes(prev => [...prev, ...next.filter(n => !prev.some(p => p.id === n.id))]);
+      setMore({ loading: false, done: next.length < PAGE });
+    } catch { setMore({ loading: false, done: false }); }
+  }
   if (notes == null) return <PageSpinner label="Loading what people said" />;
   if (failed) return <Notice tone="warn" title="The campus log did not load">Check your connection and reload the page.</Notice>;
   if (!notes.length) {
@@ -140,9 +153,16 @@ function CampusFeed() {
     );
   }
   return (
-    <ul className="overflow-hidden rounded-card border border-card-line bg-surface shadow-card">
-      {notes.map(n => <NoteItem key={n.id} note={n} showDish mine={user?.id === n.uid} />)}
-    </ul>
+    <>
+      <ul className="overflow-hidden rounded-card border border-card-line bg-surface shadow-card">
+        {notes.map(n => <NoteItem key={n.id} note={n} showDish mine={user?.id === n.uid} />)}
+      </ul>
+      {!more.done && (
+        <div className="mt-4 flex justify-center">
+          <Button variant="secondary" onClick={loadMore} loading={more.loading}>Show more</Button>
+        </div>
+      )}
+    </>
   );
 }
 
