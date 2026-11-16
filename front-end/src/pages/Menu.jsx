@@ -109,21 +109,22 @@ export default function Menu() {
   const [diets, setDiets] = useState(() => new Set());
   const [avoid, setAvoid] = useState(() => new Set());
   const [showAllergens, setShowAllergens] = useState(false);
+  const [newOnly, setNewOnly] = useState(false);
 
   const toggle = (setter, key) => setter(prev => {
     const next = new Set(prev);
     if (next.has(key)) next.delete(key); else next.add(key);
     return next;
   });
-  const clearFilters = () => { setQuery(''); setDiets(new Set()); setAvoid(new Set()); };
+  const clearFilters = () => { setQuery(''); setDiets(new Set()); setAvoid(new Set()); setNewOnly(false); };
 
   const stations = useMemo(() => result?.stations ?? [], [result]);
   const curated = useMemo(() => curateMenu(stations, { newKeys: fresh.keys }), [stations, fresh.keys]);
   const picksInOrder = useMemo(() => stablePicks(stations, fresh.keys), [stations, fresh.keys]);
-  const filtering = Boolean(query.trim() || diets.size || avoid.size);
+  const filtering = Boolean(query.trim() || diets.size || avoid.size || newOnly);
 
   const view = useMemo(() => {
-    const match = item => itemMatches(item, { query, diets, avoid });
+    const match = item => itemMatches(item, { query, diets, avoid }) && (!newOnly || item.isNew);
     const byName = new Map(curated.stations.map(s => [s.name, s]));
     const picks = picksInOrder.filter(match).slice(0, 5).map(item => ({ ...item, stationLabel: byName.get(item.station)?.label ?? item.station }));
     const sections = curated.stations
@@ -143,7 +144,7 @@ export default function Menu() {
       dishes: sections.reduce((n, s) => n + s.dishes.length, 0),
       parts: sections.reduce((n, s) => n + s.extras.length, 0) + bars.reduce((n, b) => n + b.extras.length, 0),
     };
-  }, [curated, picksInOrder, query, diets, avoid, filtering]);
+  }, [curated, picksInOrder, query, diets, avoid, filtering, newOnly]);
 
   // Community: your scores, campus scores for every dish on this menu, and
   // the ranking sheet. Rows built from them only appear when there is data.
@@ -184,11 +185,11 @@ export default function Menu() {
     const yours = new Set(yourFavorites.map(d => d.id));
     return allDishes
       .map(d => ({ d, s: scores[dishId(hall.slug, d.name)] }))
-      .filter(x => x.s?.score != null && x.s.score >= 6.8 && !yours.has(x.d.id) && itemMatches(x.d, { query, diets, avoid }))
+      .filter(x => x.s?.score != null && x.s.score >= 6.8 && !yours.has(x.d.id) && itemMatches(x.d, { query, diets, avoid }) && (!newOnly || x.d.isNew))
       .sort((a, b) => b.s.score - a.s.score)
       .slice(0, 5)
       .map(x => x.d);
-  }, [allDishes, scores, hall, query, diets, avoid, yourFavorites]);
+  }, [allDishes, scores, hall, query, diets, avoid, yourFavorites, newOnly]);
 
   const periods = result?.periods?.length ? result.periods : DEFAULT_MEALS;
   const activeMeal = result?.period?.slug ?? mealSlug;
@@ -343,6 +344,9 @@ export default function Menu() {
               {DIET_FILTERS.map(f => (
                 <Chip key={f.key} disabled={!ready} pressed={diets.has(f.key)} onClick={() => toggle(setDiets, f.key)}>{f.label}</Chip>
               ))}
+              {fresh.status === 'ready' && newCount > 0 && (
+                <Chip disabled={!ready} pressed={newOnly} onClick={() => setNewOnly(v => !v)}>New today · {newCount}</Chip>
+              )}
               <Chip disabled={!ready} pressed={showAllergens || avoid.size > 0} onClick={() => setShowAllergens(v => !v)}>
                 {avoid.size ? `Avoiding ${avoid.size} allergen${avoid.size === 1 ? '' : 's'}` : 'Allergens'}
               </Chip>
@@ -361,8 +365,9 @@ export default function Menu() {
           {!filtering && (
             <PicksShelf
               title={`${mealName} picks`}
-              note={fresh.status === 'ready' && newCount > 0 ? `${newCount} new today` : null}
+              note={fresh.status === 'ready' && newCount > 0 ? `See all ${newCount} new today` : null}
               noteDetail={proof}
+              onNote={() => setNewOnly(true)}
               items={shelf}
             />
           )}
@@ -371,8 +376,10 @@ export default function Menu() {
 
           <p className="mb-6 flex flex-wrap items-center gap-x-3 text-sm text-ink-muted" role="status">
             {filtering
-              ? `${view.dishes} ${view.dishes === 1 ? 'dish' : 'dishes'} and ${view.parts} ${view.parts === 1 ? 'side or ingredient' : 'sides and ingredients'} match.`
-              : `${curated.counts.dishes} dishes across ${curated.counts.stations} stations.`}
+              ? (newOnly && !query.trim() && !diets.size && !avoid.size
+                ? `${view.dishes} ${view.dishes === 1 ? 'dish is' : 'dishes are'} new today${view.bars.length ? `, plus new ingredients at ${view.bars.length} build-your-own ${view.bars.length === 1 ? 'bar' : 'bars'}` : ''}.`
+                : `${view.dishes} ${view.dishes === 1 ? 'dish' : 'dishes'}${view.parts ? ` and ${view.parts} ${view.parts === 1 ? 'side or ingredient' : 'sides and ingredients'}` : ''} match.`)
+              : `${view.dishes} ${view.dishes === 1 ? 'dish' : 'dishes'} at ${view.plated.length + view.sweets.length} stations${view.bars.length ? `, plus ${view.bars.length} build-your-own ${view.bars.length === 1 ? 'bar' : 'bars'}` : ''}.`}
             {filtering && <button type="button" onClick={clearFilters} className="min-h-11 font-semibold text-brand-text">Clear filters</button>}
           </p>
 

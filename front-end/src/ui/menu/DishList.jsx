@@ -234,14 +234,18 @@ function PickTile({ item }) {
 }
 
 /** The swipeable row of picks at the top of a menu. */
-export function PicksShelf({ title, note, noteDetail, items }) {
+export function PicksShelf({ title, note, noteDetail, onNote, items }) {
   if (!items.length) return null;
   return (
     <section aria-labelledby="picks-heading" className="mb-8">
       <div className="mb-3 flex items-baseline justify-between gap-3">
         <h2 id="picks-heading" className="text-xl font-semibold">{title}</h2>
         {/* "New" is inferred by comparing neighbouring days; the detail says which. */}
-        {note && <p className="text-sm text-ink-muted" title={noteDetail || undefined}>{note}{noteDetail && <span className="sr-only">: {noteDetail}</span>}</p>}
+        {note && (
+          <button type="button" onClick={onNote} title={noteDetail || undefined} className="min-h-11 text-sm font-semibold text-brand-text">
+            {note}{noteDetail && <span className="sr-only">. {noteDetail}</span>}
+          </button>
+        )}
       </div>
       {/* Keyed by its dishes: when scores reorder the shelf it starts again from the first tile. */}
       <ul key={items.map(i => i.id).join('|')} className="relative -mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-1 scrollbar-none sm:mx-0 sm:scroll-px-0 sm:px-0">
@@ -327,7 +331,7 @@ export function BuildBars({ bars, expanded = false }) {
       <h2 id="build-heading" className="mb-2 px-1 text-lg font-semibold">Build your own</h2>
       <ul className="overflow-hidden rounded-card border border-card-line bg-surface shadow-card">
         {bars.map(bar => (
-          <FoldRow key={bar.name} defaultOpen={expanded} label={`${bar.label} · ${bar.extras.length} ingredients`}>
+          <FoldRow key={bar.name} defaultOpen={expanded} label={`${bar.label} · ${bar.extras.length} ${bar.extras.length === 1 ? 'ingredient' : 'ingredients'}`}>
             <PartList items={bar.extras} />
           </FoldRow>
         ))}
