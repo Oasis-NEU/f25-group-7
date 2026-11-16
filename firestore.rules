@@ -124,6 +124,28 @@ service cloud.firestore {
         && counterOk(request.resource.data, resource == null ? {} : resource.data, 'disliked', was, now);
     }
 
+    // ---- Feedback: anyone may send, nobody may read it back --------------
+    // Read in the Firebase console. Signed-in senders are tied to their uid;
+    // an email is stored only when the sender chose to be contacted.
+    match /feedback/{id} {
+      allow create: if validFeedback(request.resource.data);
+      allow read, update, delete: if false;
+    }
+
+    function validFeedback(d) {
+      return d.keys().hasOnly(['kind', 'message', 'page', 'dish', 'theme', 'viewport', 'ua', 'email', 'uid', 'createdAt'])
+        && d.kind in ['bug', 'idea', 'menu', 'other']
+        && d.message is string && d.message.size() >= 3 && d.message.size() <= 1000
+        && d.page is string && d.page.size() <= 200
+        && d.get('dish', '') is string && d.get('dish', '').size() <= 200
+        && d.theme in ['dark', 'light']
+        && d.viewport is int
+        && d.ua is string && d.ua.size() <= 300
+        && d.get('email', '') is string && d.get('email', '').size() <= 120
+        && (d.get('uid', null) == null || (signedIn() && d.uid == request.auth.uid))
+        && d.createdAt is int;
+    }
+
     // ---- Public: Steast vs IV votes ---------------------------------------
     // Document id is "<uid>_<YYYY-MM-DD>_<meal>", so one vote per meal per day.
     match /votes/{voteId} {

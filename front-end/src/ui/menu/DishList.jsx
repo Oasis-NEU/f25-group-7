@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, ChevronDown, ChevronRight, Dices, Plus } from 'lucide-react';
+import { Check, ChevronDown, ChevronRight, Dices, Flag, Plus } from 'lucide-react';
+import { useFeedback } from '../../state/feedback';
 import { Button } from '../Button';
 import { Dialog } from '../Dialog';
 import { useAuth } from '../../state/auth';
@@ -99,6 +100,20 @@ const FACTS = [
   ['Sodium', 'sodium', ' mg'],
 ];
 
+/** "Something wrong with this dish?" Opens feedback with the dish attached. */
+function ReportDish({ dish, hall, onOpen }) {
+  const feedback = useFeedback();
+  return (
+    <button
+      type="button"
+      onClick={() => { onOpen?.(); feedback.open({ kind: 'menu', dish: `${dish.name}${hall ? ` · ${hall}` : ''}${dish.stationLabel ? ` · ${dish.stationLabel}` : ''}` }); }}
+      className="inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-ink-muted hover:text-ink"
+    >
+      <Flag className="size-4" aria-hidden="true" /> Report a problem with this dish
+    </button>
+  );
+}
+
 /**
  * One dish, in a bottom sheet: what it is, its scores, nutrition, allergens,
  * and the two things you can do with it.
@@ -169,6 +184,8 @@ export function DishSheet({ item, open, onClose, periodSlug }) {
         </div>
 
         {id && <div className="border-t border-line pt-5"><DishCommunity dish={{ id, name: dish.name, hall: ctx.hall }} campus={campus} yours={yours} /></div>}
+
+        <ReportDish dish={dish} hall={ctx.hall} onOpen={onClose} />
       </div>
     </Dialog>
   );

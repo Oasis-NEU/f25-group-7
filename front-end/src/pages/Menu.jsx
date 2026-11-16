@@ -3,6 +3,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { ChevronDown, ExternalLink, RefreshCw, Search, SlidersHorizontal, UtensilsCrossed, WifiOff, X } from 'lucide-react';
 import { Dialog } from '../ui/Dialog';
 import { DirectionsLink } from '../ui/Directions';
+import { useFeedback } from '../state/feedback';
 import { loadMenu, menuNotice, peekLikelyMenu } from '../data/menu';
 import { curateMenu, stablePicks } from '../data/curate';
 import { useNewToday } from '../lib/useNewToday';
@@ -114,6 +115,7 @@ export default function Menu() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [newOnly, setNewOnly] = useState(false);
   const [stationFilter, setStationFilter] = useState(null);
+  const feedback = useFeedback();
 
   const toggle = (setter, key) => setter(prev => {
     const next = new Set(prev);
@@ -542,6 +544,12 @@ export default function Menu() {
 
       {!showSkeleton && result && result.status !== 'ok' && (
         <MenuEmpty result={result} hall={hall} date={date} dayWord={dayWord.toLowerCase()} onRetry={retry} retrying={loading} dateQuery={dateQuery} mealSlug={mealSlug} />
+      )}
+      {!showSkeleton && result?.status === 'ok' && (
+        <p className="mt-10 text-center text-sm text-ink-muted">
+          Something wrong with this menu?{' '}
+          <button type="button" onClick={() => feedback.open({ kind: 'menu', dish: `${hall.name} · ${mealName} · ${formatIsoDate(date, { weekday: 'short', month: 'short', day: 'numeric' })}` })} className="min-h-11 font-semibold text-brand-text hover:underline">Tell us</button>
+        </p>
       )}
       <DishSheet item={detail} open={Boolean(detail)} onClose={() => setDetail(null)} periodSlug={result?.period?.slug} />
       <RankSheet dish={ranking} open={Boolean(ranking)} onClose={() => setRanking(null)} />
