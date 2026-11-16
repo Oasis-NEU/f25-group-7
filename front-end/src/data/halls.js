@@ -43,15 +43,16 @@ export const HALLS = [
 
 /** Look a hall up by its slug or one of its aliases. */
 /**
- * Walking directions to a hall in the visitor's maps app: Apple Maps on
- * Apple devices, Google Maps everywhere else. Searches by the building's name
- * rather than a street number, so nothing here can be a wrong address.
+ * Directions to a hall in the visitor's maps app, walking or by public
+ * transit (the T and MBTA buses): Apple Maps on Apple devices, Google Maps
+ * everywhere else. Searches by the building's name rather than a street
+ * number, so nothing here can be a wrong address.
  */
-export function directionsUrl(hall, ua = typeof navigator !== 'undefined' ? navigator.userAgent : '') {
+export function directionsUrl(hall, mode = 'walk', ua = typeof navigator !== 'undefined' ? navigator.userAgent : '') {
   const q = encodeURIComponent(hall.mapQuery ?? `${hall.name}, Northeastern University, Boston, MA`);
-  return /iPhone|iPad|iPod|Macintosh/.test(ua)
-    ? `https://maps.apple.com/?daddr=${q}&dirflg=w`
-    : `https://www.google.com/maps/dir/?api=1&destination=${q}&travelmode=walking`;
+  const apple = /iPhone|iPad|iPod|Macintosh/.test(ua);
+  if (apple) return `https://maps.apple.com/?daddr=${q}&dirflg=${mode === 'transit' ? 'r' : 'w'}`;
+  return `https://www.google.com/maps/dir/?api=1&destination=${q}&travelmode=${mode === 'transit' ? 'transit' : 'walking'}`;
 }
 
 export function hallBySlug(slug) {
