@@ -1,0 +1,115 @@
+rules_version = '2';
+
+// NU Dining security rules.
+//
+// Private data (tracker logs, goals, your ranked list) is readable only by
+// its owner, and written only by its owner once their @northeastern.edu email
+// is verified; signing in alone is not enough. Public data (campus dish counters, votes) can
+// be read by anyone but only written by verified @northeastern.edu accounts,
+// and every counter change must match the writer's own ranking change in the
+// same batch, so one person moves one dish's counters by at most one.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isOwner(uid) { return signedIn() && request.auth.uid == uid; }
+    function isNU() {
+      return signedIn()
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.matches('^[^@]+@northeastern[.]edu$');
+    }
+    function isBucket(b) { return b in ['loved', 'fine', 'disliked']; }
+    function dishPath(dishId) { return /databases/$(database)/documents/dishes/$(dishId); }
+    function rankingPath(uid, dishId) { return /databases/$(database)/documents/users/$(uid)/rankings/$(dishId); }
+
+    // ---- Private: profile, goals, ranked order, tracker ------------------
+    match /users/{uid} {
+      allow read: if isOwner(uid);
+      allow write: if isOwner(uid) && isNU();
+
+      match /logs/{logId} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid) && isNU()
+          && request.resource.data.food_name is string
+          && request.resource.data.food_name.size() > 0
+          && request.resource.data.food_name.size() <= 200
+          && request.resource.data.logged_at is string;
+      }
+
+      // One document per dish you have ranked: { bucket, name, hall, station, rankedAt }.
+      match /rankings/{dishId} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid) && isNU()
+          && validRanking(request.resource.data)
+          && countersMove(dishId, null, request.resource.data.bucket);
+        allow update: if isOwner(uid) && isNU()
+          && validRanking(request.resource.data)
+          && (request.resource.data.bucket == resource.data.bucket
+              || countersMove(dishId, resource.data.bucket, request.resource.data.bucket));
+        allow delete: if isOwner(uid)
+          && countersMove(dishId, resource.data.bucket, null);
+      }
+    }
+
+    function validRanking(d) {
+      return d.keys().hasOnly(['bucket', 'name', 'hall', 'station', 'course', 'rankedAt'])
+        && isBucket(d.bucket)
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 200
+        && d.hall is string && d.hall.size() <= 64;
+    }
+
+    // The campus counters for a dish, after this batch, moved exactly from
+    // oldB to newB (either may be null).
+    function countersMove(dishId, oldB, newB) {
+      let beforeDoc = exists(dishPath(dishId)) ? get(dishPath(dishId)).data : {};
+      let afterDoc = existsAfter(dishPath(dishId)) ? getAfter(dishPath(dishId)).data : {};
+      return counterOk(afterDoc, beforeDoc, 'loved', oldB, newB)
+        && counterOk(afterDoc, beforeDoc, 'fine', oldB, newB)
+        && counterOk(afterDoc, beforeDoc, 'disliked', oldB, newB);
+    }
+
+    function counterOk(a, b, f, oldB, newB) {
+      return (oldB != f && newB == f && a.get(f, 0) == b.get(f, 0) + 1)
+        || (oldB == f && newB != f && a.get(f, 0) == b.get(f, 0) - 1)
+        || ((oldB == f) == (newB == f) && a.get(f, 0) == b.get(f, 0));
+    }
+
+    // ---- Public: campus dish counters ------------------------------------
+    // { name, hall, loved, fine, disliked }. Anyone may read; a write must be
+    // the counter side of the writer's own ranking change in the same batch.
+    match /dishes/{dishId} {
+      allow read: if true;
+      allow create, update: if isNU()
+        && request.resource.data.keys().hasOnly(['name', 'hall', 'loved', 'fine', 'disliked'])
+        && request.resource.data.get('loved', 0) >= 0
+        && request.resource.data.get('fine', 0) >= 0
+        && request.resource.data.get('disliked', 0) >= 0
+        && (resource == null || (request.resource.data.name == resource.data.name && request.resource.data.hall == resource.data.hall))
+        && rankingChanged(dishId);
+    }
+
+    function rankingChanged(dishId) {
+      let p = rankingPath(request.auth.uid, dishId);
+      let was = exists(p) ? get(p).data.bucket : null;
+      let now = existsAfter(p) ? getAfter(p).data.bucket : null;
+      return was != now
+        && counterOk(request.resource.data, resource == null ? {} : resource.data, 'loved', was, now)
+        && counterOk(request.resource.data, resource == null ? {} : resource.data, 'fine', was, now)
+        && counterOk(request.resource.data, resource == null ? {} : resource.data, 'disliked', was, now);
+    }
+
+    // ---- Public: Steast vs IV votes ---------------------------------------
+    // Document id is "<uid>_<YYYY-MM-DD>_<meal>", so one vote per meal per day.
+    match /votes/{voteId} {
+      allow read: if true;
+      allow create: if isNU()
+        && voteId == request.auth.uid + '_' + request.resource.data.date + '_' + request.resource.data.meal
+        && request.resource.data.keys().hasOnly(['uid', 'date', 'meal', 'location', 'createdAt'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && request.resource.data.meal in ['breakfast', 'lunch', 'dinner']
+        && request.resource.data.location in ['steast', 'iv'];
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+    }
+  }
+}

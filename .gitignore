@@ -27,3 +27,13 @@ dist-ssr
 .vercel
 .env.local
 .claude/
+
+# Firebase
+firebase-debug.log
+firestore-debug.log
+.firebase/
+
+# Throwaway design-review captures
+.impeccable/review/
+.impeccable/build/
+.impeccable/mocks/

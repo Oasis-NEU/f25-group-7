@@ -1,10 +1,12 @@
-import { Building, Building2 } from 'lucide-react';
-import FoodBackground from "../Components/background";
-import TextType from '../Components/TextType';
-import { useState, useEffect, useRef, useCallback } from "react";
-import { supabase } from "../config/supabaseClient";
+import { useCallback, useEffect, useState } from 'react';
+import { Check, Circle, CircleDot, Clock, RefreshCw, X } from 'lucide-react';
+import { castVote, getMyMeals, getTotals, undoVote } from '../backend/votes';
 import { campusDate, campusNow } from '../functions/campusTime';
-import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../state/auth';
+import { Button } from '../ui/Button';
+import { Card, Notice, PageHeader } from '../ui/primitives';
+import { PageSpinner } from '../ui/Spinner';
+import { usePageTitle } from '../lib/usePageTitle';
 
 const MEAL_PERIODS = [
   { name: 'breakfast', label: 'Breakfast', start: 7 * 60,  end: 11 * 60 },
@@ -12,23 +14,18 @@ const MEAL_PERIODS = [
   { name: 'dinner',    label: 'Dinner',    start: 16 * 60, end: 21 * 60 },
 ];
 
+const OPTIONS = [
+  { key: 'steast', name: 'Stetson East', short: 'Steast' },
+  { key: 'iv', name: 'International Village', short: 'IV' },
+];
+
 // Meal windows are campus opening times, so compare against Boston rather
 // than whatever timezone the visitor's laptop is set to.
-function minutesNow() {
-  return campusNow().minutes;
-}
-function getStartedPeriods() {
-  const m = minutesNow();
-  return MEAL_PERIODS.filter(p => m >= p.start);
-}
-function getCurrentPeriod() {
-  const m = minutesNow();
-  return MEAL_PERIODS.find(p => m >= p.start && m < p.end) || null;
-}
-function getNextPeriod() {
-  const m = minutesNow();
-  return MEAL_PERIODS.find(p => p.start > m) || null;
-}
+const minutesNow = () => campusNow().minutes;
+const getStartedPeriods = () => MEAL_PERIODS.filter(p => minutesNow() >= p.start);
+const getCurrentPeriod = () => MEAL_PERIODS.find(p => minutesNow() >= p.start && minutesNow() < p.end) || null;
+const getNextPeriod = () => MEAL_PERIODS.find(p => p.start > minutesNow()) || null;
+
 function fmtTime(minutes) {
   const h = Math.floor(minutes / 60);
   const min = minutes % 60;
@@ -38,63 +35,50 @@ function fmtTime(minutes) {
 }
 
 export const Vote = () => {
-  const navigate = useNavigate();
-  const [user, setUser]                 = useState(null);
-  const [votes, setVotes]               = useState({ steast: 0, iv: 0 });
+  usePageTitle('Steast or IV?', 'Vote once per meal between Stetson East and International Village and see the campus totals.');
+  const { user, canPost } = useAuth();
+  const [votes, setVotes] = useState({ steast: 0, iv: 0 });
   // votedPeriods comes from Supabase so the lock follows the user across devices
   const [votedPeriods, setVotedPeriods] = useState([]);
-  const [startedPeriods, setStartedPeriods] = useState(getStartedPeriods());
-  const [currentPeriod, setCurrentPeriod]   = useState(getCurrentPeriod());
-  const [toast, setToast]   = useState(null);
-  const toastTimer = useRef(null);
+  const [startedPeriods, setStartedPeriods] = useState(getStartedPeriods);
+  const [currentPeriod, setCurrentPeriod] = useState(getCurrentPeriod);
+  const [status, setStatus] = useState('loading');
+  const [failure, setFailure] = useState(null);
+  const [toast, setToast] = useState(null);
   const today = campusDate();
 
   // Slots the user is allowed to vote in right now
   const unvotedSlots = startedPeriods.filter(p => !votedPeriods.includes(p.name));
-  const canVote      = unvotedSlots.length > 0;
-  const nextPeriod   = getNextPeriod();
-
-  // Auth
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data?.user) { navigate('/login'); return; }
-      setUser(data.user);
-    });
-  }, [navigate]);
+  const canVote = status === 'ready' && unvotedSlots.length > 0;
+  const nextPeriod = getNextPeriod();
 
   // All-time cumulative totals, refetched on any Realtime event
   const fetchTotals = useCallback(async () => {
-    const { data } = await supabase.from("votes").select("location");
-    if (data) {
-      setVotes({
-        steast: data.filter(r => r.location === 'steast').length,
-        iv:     data.filter(r => r.location === 'iv').length,
-      });
-    }
+    setVotes(await getTotals());
   }, []);
 
-  // Load the user's voted periods for today and subscribe to Realtime
+  const load = useCallback(async () => {
+    setStatus('loading');
+    setFailure(null);
+    try {
+      setVotedPeriods(await getMyMeals(user.id, today));
+      await fetchTotals();
+      setStatus('ready');
+    } catch (err) {
+      console.error('Loading votes failed', err);
+      setStatus('error');
+    }
+  }, [user, today, fetchTotals]);
+
   useEffect(() => {
-    if (!user) return;
+    if (!user) return undefined;
+    load();
 
-    // Which periods has this user already voted today?
-    supabase
-      .from("votes")
-      .select("meal_period")
-      .eq("user_id",   user.id)
-      .eq("vote_date", today)
-      .then(({ data }) => setVotedPeriods((data || []).map(r => r.meal_period)));
-
-    // Community totals
-    fetchTotals();
-
-    // Live updates: re-fetch totals on any INSERT or DELETE in the votes table.
-    // My own votes are covered by optimistic updates; fetchTotals handles other users.
-    const channel = supabase
-      .channel("votes-realtime")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "votes" }, fetchTotals)
-      .on("postgres_changes", { event: "DELETE", schema: "public", table: "votes" }, fetchTotals)
-      .subscribe();
+    // Campus totals refresh every 30 seconds while the page is visible. Count
+    // queries cost one read per thousand votes, so this stays cheap; your own
+    // votes update instantly through the optimistic state below.
+    const refreshTotals = () => { if (document.visibilityState === 'visible') fetchTotals().catch(() => {}); };
+    const poll = setInterval(refreshTotals, 30_000);
 
     // Keep meal period state fresh every minute
     const clock = setInterval(() => {
@@ -102,13 +86,12 @@ export const Vote = () => {
       setCurrentPeriod(getCurrentPeriod());
     }, 60_000);
 
-    return () => { supabase.removeChannel(channel); clearInterval(clock); };
-  }, [user, fetchTotals, today]);
+    return () => { clearInterval(poll); clearInterval(clock); };
+  }, [user, load, fetchTotals]);
 
-  // Cast vote
   const handleVote = async (option) => {
     if (!canVote || !user) return;
-    const label = option === "steast" ? "Stetson East" : "International Village";
+    const label = OPTIONS.find(o => o.key === option).name;
 
     // Prefer the currently-active period; otherwise use the earliest unvoted slot
     const slotToMark = (currentPeriod && unvotedSlots.find(p => p.name === currentPeriod.name))
@@ -116,158 +99,127 @@ export const Vote = () => {
       : unvotedSlots[0];
 
     // Optimistic update
+    setFailure(null);
     setVotedPeriods(prev => [...prev, slotToMark.name]);
     setVotes(prev => ({ ...prev, [option]: prev[option] + 1 }));
 
-    const { error } = await supabase.from("votes").insert({
-      user_id:     user.id,
-      vote_date:   today,
-      meal_period: slotToMark.name,
-      location:    option,
-    });
+    const error = await castVote(user.id, today, slotToMark.name, option).then(() => null, err => err);
 
     if (error) {
       // Roll back: the database rejected it, most likely a duplicate from another tab
       setVotedPeriods(prev => prev.filter(p => p !== slotToMark.name));
       setVotes(prev => ({ ...prev, [option]: Math.max(0, prev[option] - 1) }));
+      setFailure(error?.code === 'permission-denied' && !canPost
+        ? 'Verify your @northeastern.edu email to vote. Check your inbox for the link.'
+        : 'Your vote was not saved. You may already have voted for this meal in another tab.');
       return;
     }
 
-    if (toastTimer.current) clearTimeout(toastTimer.current);
+    // The undo stays until it is used or dismissed: the HIG asks to avoid
+    // controls that disappear on a timer (accessibility.md, Cognitive).
     setToast({ option, label, slot: slotToMark.name });
-    toastTimer.current = setTimeout(() => setToast(null), 5000);
   };
 
-  // Undo
   const handleUndo = async () => {
     if (!toast || !user) return;
-
-    // Optimistic update
-    setVotes(prev => ({ ...prev, [toast.option]: Math.max(0, prev[toast.option] - 1) }));
-    setVotedPeriods(prev => prev.filter(p => p !== toast.slot));
-    clearTimeout(toastTimer.current);
+    const undone = toast;
+    setVotes(prev => ({ ...prev, [undone.option]: Math.max(0, prev[undone.option] - 1) }));
+    setVotedPeriods(prev => prev.filter(p => p !== undone.slot));
     setToast(null);
 
-    await supabase
-      .from("votes")
-      .delete()
-      .eq("user_id",     user.id)
-      .eq("vote_date",   today)
-      .eq("meal_period", toast.slot);
+    const error = await undoVote(user.id, today, undone.slot).then(() => null, err => err);
+    if (error) {
+      setFailure('The vote could not be undone. Refresh to see the current totals.');
+      load();
+    }
   };
 
   const statusText = () => {
     if (unvotedSlots.length > 0) {
-      const names = unvotedSlots.map(p => p.label).join(' & ');
-      return `${unvotedSlots.length} vote${unvotedSlots.length > 1 ? 's' : ''} available: ${names}`;
+      const names = unvotedSlots.map(p => p.label).join(' and ');
+      return `You have ${unvotedSlots.length} vote${unvotedSlots.length > 1 ? 's' : ''} for ${names}.`;
     }
-    if (nextPeriod) return `Next vote opens at ${fmtTime(nextPeriod.start)} for ${nextPeriod.label}`;
-    return 'All 3 votes used for today. See you tomorrow.';
+    if (nextPeriod) return `Next vote opens at ${fmtTime(nextPeriod.start)} for ${nextPeriod.label.toLowerCase()}.`;
+    return "You've used all three votes today. See you tomorrow.";
   };
 
+  if (status === 'loading') return <PageSpinner label="Loading votes" />;
+
+  const total = votes.steast + votes.iv;
+
   return (
-    <div className="min-h-screen bg-black">
-      <FoodBackground />
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen gap-6 sm:gap-8 px-4">
+    <div className="mx-auto max-w-3xl">
+      <PageHeader title="Steast or IV?">
+        One vote per meal. Totals refresh every 30 seconds.
+      </PageHeader>
 
-        <div className="text-center">
-          <div className="text-3xl sm:text-5xl md:text-6xl font-bold text-white mb-2">
-            <TextType
-              text={["Steast or IV?", "Vote your choice"]}
-              typingSpeed={100}
-              pauseDuration={3500}
-              showCursor={true}
-              cursorCharacter="|"
-              textColors={["#FFFFFF", "#FFFFFF"]}
-            />
-          </div>
-        </div>
+      {status === 'error' && (
+        <Notice tone="error" className="mb-5" title="Votes couldn't be loaded"
+          action={<Button size="sm" variant="secondary" onClick={load}><RefreshCw className="size-4" aria-hidden="true" /> Try again</Button>}>
+          The voting service did not respond. Your previous votes are safe.
+        </Notice>
+      )}
 
-        {/* Meal period pills */}
-        <div className="flex gap-2 flex-wrap justify-center">
-          {MEAL_PERIODS.map(p => {
-            const started   = startedPeriods.some(s => s.name === p.name);
-            const voted     = votedPeriods.includes(p.name);
-            const active    = currentPeriod?.name === p.name;
-            const available = started && !voted;
-            return (
-              <div
-                key={p.name}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium"
-                style={{
-                  backgroundColor: active
-                    ? 'rgba(239,68,68,0.15)'
-                    : available
-                      ? 'rgba(255,255,255,0.08)'
-                      : 'rgba(255,255,255,0.03)',
-                  border: `1px solid ${
-                    active    ? 'rgba(239,68,68,0.4)'    :
-                    available ? 'rgba(255,255,255,0.15)' :
-                                'rgba(255,255,255,0.06)'
-                  }`,
-                  color: voted
-                    ? 'rgba(134,239,172,0.85)'
-                    : active
-                      ? 'rgba(239,68,68,0.9)'
-                      : available
-                        ? 'rgba(255,255,255,0.7)'
-                        : 'rgba(255,255,255,0.2)',
-                }}
-              >
-                {voted ? '✓' : active ? '●' : started ? '○' : '·'} {p.label}
+      <ol className="mb-6 flex flex-wrap gap-2" aria-label="Today's meals">
+        {MEAL_PERIODS.map(p => {
+          const started = startedPeriods.some(s => s.name === p.name);
+          const voted = votedPeriods.includes(p.name);
+          const active = currentPeriod?.name === p.name;
+          const Icon = voted ? Check : active ? CircleDot : started ? Circle : Clock;
+          const state = voted ? 'voted' : started ? 'open to vote' : `opens ${fmtTime(p.start)}`;
+          return (
+            <li key={p.name}
+              className={`inline-flex min-h-10 items-center gap-1.5 rounded-full border px-3.5 text-sm font-semibold
+                ${voted ? 'border-transparent bg-open-soft text-open'
+                  : active ? 'border-brand bg-brand-soft text-brand-text'
+                    : started ? 'border-line bg-surface text-ink' : 'border-line bg-surface text-ink-muted'}`}>
+              <Icon className="size-4" aria-hidden="true" />
+              {p.label}
+              <span className="sr-only">, {state}</span>
+            </li>
+          );
+        })}
+      </ol>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        {OPTIONS.map(option => {
+          const count = votes[option.key];
+          const share = total ? Math.round((count / total) * 100) : 0;
+          return (
+            <Card key={option.key} className="flex flex-col p-5 sm:p-6">
+              <h2 className="text-xl font-semibold">{option.name}</h2>
+              <p className="mt-4 flex items-baseline gap-2">
+                <span className="text-4xl font-semibold tabular">{count.toLocaleString()}</span>
+                <span className="text-ink-muted">vote{count === 1 ? '' : 's'} · {share}%</span>
+              </p>
+              <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-surface-2" aria-hidden="true">
+                <div className="h-full rounded-full bg-brand transition-[width] duration-500" style={{ width: `${share}%` }} />
               </div>
-            );
-          })}
-        </div>
-
-        {/* Vote buttons */}
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center w-full max-w-lg">
-          <button
-            disabled={!canVote}
-            onClick={() => handleVote("steast")}
-            className={`flex items-center justify-center gap-2 px-5 py-3 rounded-lg transition font-medium w-full sm:w-auto ${
-              canVote
-                ? 'bg-red-900 hover:bg-red-600 text-white cursor-pointer'
-                : 'bg-white/5 text-white/25 cursor-not-allowed'
-            }`}
-          >
-            <Building className="w-5 h-5 shrink-0" />
-            <span>Vote for Stetson East</span>
-            <span className="font-bold">{votes.steast}</span>
-          </button>
-          <button
-            disabled={!canVote}
-            onClick={() => handleVote("iv")}
-            className={`flex items-center justify-center gap-2 px-5 py-3 rounded-lg transition font-medium w-full sm:w-auto ${
-              canVote
-                ? 'bg-red-900 hover:bg-red-600 text-white cursor-pointer'
-                : 'bg-white/5 text-white/25 cursor-not-allowed'
-            }`}
-          >
-            <span>Vote for Int'l Village</span>
-            <span className="font-bold">{votes.iv}</span>
-            <Building2 className="w-5 h-5 shrink-0" />
-          </button>
-        </div>
-
-        <p className="text-sm text-white/35 text-center px-4">{statusText()}</p>
+              <Button className="mt-6" size="lg" block disabled={!canVote} onClick={() => handleVote(option.key)}>
+                Vote {option.short}
+              </Button>
+            </Card>
+          );
+        })}
       </div>
 
-      {/* Undo toast */}
-      {toast && (
-        <div
-          className="fixed bottom-6 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:w-auto z-50 flex items-center justify-between sm:justify-start gap-3 px-5 py-3 rounded-2xl text-sm font-medium text-white shadow-2xl"
-          style={{ backgroundColor: 'rgba(30,30,35,0.97)', border: '1px solid rgba(255,255,255,0.1)' }}
-        >
-          <span>Voted for <span className="text-red-400">{toast.label}</span></span>
-          <button
-            onClick={handleUndo}
-            className="px-3 py-1 rounded-full text-xs font-semibold bg-white/10 hover:bg-white/20 transition shrink-0"
-          >
-            Undo
-          </button>
-        </div>
-      )}
+      <p className="mt-5 text-sm text-ink-muted" role="status">{status === 'ready' && statusText()}</p>
+      {failure && <Notice tone="error" className="mt-4" role="alert" title={failure} />}
+
+      <div aria-live="polite" className="pointer-events-none fixed inset-x-4 bottom-24 z-50 flex justify-center md:bottom-8">
+        {toast && (
+          <div className="pointer-events-auto flex items-center gap-2 rounded-full bg-ink py-1 pl-5 pr-1 text-bg shadow-card animate-rise">
+            <span className="text-sm font-semibold">Voted for {toast.label}</span>
+            <button type="button" onClick={handleUndo} className="min-h-11 rounded-full px-3 text-sm font-semibold text-bg underline-offset-4 hover:underline">
+              Undo
+            </button>
+            <button type="button" onClick={() => setToast(null)} aria-label="Dismiss"
+              className="grid size-11 place-items-center rounded-full text-bg/80 hover:text-bg">
+              <X className="size-4" aria-hidden="true" />
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

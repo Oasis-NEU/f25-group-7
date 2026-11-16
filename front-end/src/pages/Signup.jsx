@@ -1,133 +1,86 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import FoodBackground from "../Components/background";
-import { supabase } from '../config/supabaseClient';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { isFirebaseConfigured, NU_EMAIL } from '../backend/firebase';
+import { signUp } from '../backend/account';
+import { AuthLayout } from '../layout/AuthLayout';
+import { Button } from '../ui/Button';
+import { Field, PasswordField } from '../ui/Field';
+import { Notice } from '../ui/primitives';
+import { AccountsUnavailable } from '../ui/AccountsUnavailable';
+import { safeNext } from '../state/auth';
+import { usePageTitle } from '../lib/usePageTitle';
 
-function Signup(){
-     const [name, setName] = useState('');
+const MIN_PASSWORD = 8;
+
+export default function Signup() {
+  usePageTitle('Create an account');
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-     const [password, setPassword] = useState('');
-     const [error, setError] = useState('');
-     const [loading, setLoading] = useState(false);
-     const [confirmPassword, setConfirmPassword] = useState('');
-     const navigate = useNavigate();
-     const handleSubmit = async (e) => {
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [touched, setTouched] = useState({});
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const next = safeNext(params.get('next'));
+
+  if (!isFirebaseConfigured) return <AuthLayout title="Create an account"><AccountsUnavailable feature="Creating an account" /></AuthLayout>;
+
+  // Validate on blur, not on every keystroke.
+  const passwordError = touched.password && password.length > 0 && password.length < MIN_PASSWORD
+    ? `Use at least ${MIN_PASSWORD} characters.` : '';
+  const confirmError = touched.confirm && confirmPassword && confirmPassword !== password
+    ? 'The passwords do not match.' : '';
+
+  async function handleSubmit(e) {
     e.preventDefault();
+    setTouched({ password: true, confirm: true });
     setError('');
-    if (password != confirmPassword){
-     setError("Passwords do not match.");
-     return;
-    }
+    if (password.length < MIN_PASSWORD) { setError(`Choose a password of at least ${MIN_PASSWORD} characters.`); return; }
+    if (password !== confirmPassword) { setError('The passwords do not match.'); return; }
+    if (!NU_EMAIL.test(email.trim())) { setError('Use your @northeastern.edu email. Rankings and votes are for Northeastern students.'); return; }
+
     setLoading(true);
-    try{
-     const{error} = await supabase.auth.signUp({    
-      email,
-          password,
-          options:{
-            data: {
-              full_name: name,
-            },
-          },
-     });
-     if (error){
-          if (error.message.toLowerCase().includes('rate limit') || error.message.toLowerCase().includes('email rate')) {
-               setError("Too many signups right now. Please wait a few minutes and try again.");
-          } else {
-               setError(error.message);
-          }
-     } else {
-          navigate('/home');
-     }
-} catch (err){
-     console.error(err);
-     setError("An Error Occurred.")
-}finally {
-     setLoading(false);
-}
-     };
+    try {
+      await signUp({ name, email, password });
+      // Signed in already; rankings and votes unlock once the email is verified.
+      setNotice(`We sent a link to ${email.trim()}. Open it to verify your Northeastern email, then come back to rank dishes and vote.`);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
 
-return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-[#000000] px-4 py-12">
-    <FoodBackground/>
-      <div className="flex flex-row items-center mb-6 text-center animate-pulse">
-        <img
-        src="/logo__7_-removebg-preview.png"
-        alt='NU Rate-ON Logo'
-        className='w-24 h-24 sm:w-32 sm:h-32 drop-shadow-md'/>
-      </div>
-      <div className="bg-white/20 backdrop-blur-md rounded-xl shadow-lg p-6 sm:p-8 w-full max-w-md">
-        <h2 className="text-3xl place-self-center-safe font-bold mb-6 text-red-400">SignUp</h2>
-
+  return (
+    <AuthLayout
+      title="Create an account"
+      subtitle="Free. Adds the nutrition tracker and meal voting."
+      footer={<p>Already have an account? <Link to="/login" className="font-semibold text-brand-text">Sign in</Link></p>}
+    >
+      {notice ? (
+        <Notice tone="success" role="status" title="Check your inbox"
+          action={<Button onClick={() => navigate(next, { replace: true })}>Continue</Button>}>
+          {notice}
+        </Notice>
+      ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-          <div>
-            <label className="block text-sm font-medium mb-2 text-red-400">Name</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-red-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Full Name"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-2 text-red-400">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-red-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="your@northeastern.edu"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2 text-red-400">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none text-red-400 focus:ring-2 focus:ring-blue-500"
-              placeholder="••••••••"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-2 text-red-400"> Confirm Password</label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none text-red-400 focus:ring-2 focus:ring-blue-500"
-              placeholder="••••••••"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2 px-4 rounded-lg font-semibold border border-gray-300 bg-white text-red-800 hover:bg-black hover:text-white transition-all duration-200 disabled:opacity-50"
-          >
-            {loading ? 'Signing up...' : 'Sign Up'}
-          </button>
+          {error && <Notice tone="error" role="alert" title={error} />}
+          <Field label="Name" autoComplete="name" required value={name} onChange={e => setName(e.target.value)} />
+          <Field label="Email" type="email" autoComplete="email" inputMode="email" required value={email}
+            onChange={e => setEmail(e.target.value)} placeholder="you@northeastern.edu"
+            hint="Your Northeastern email. We send a link to verify it." />
+          <PasswordField label="Password" autoComplete="new-password" required value={password}
+            onChange={e => setPassword(e.target.value)} onBlur={() => setTouched(t => ({ ...t, password: true }))}
+            hint={`At least ${MIN_PASSWORD} characters.`} error={passwordError} />
+          <PasswordField label="Confirm password" autoComplete="new-password" required value={confirmPassword}
+            onChange={e => setConfirmPassword(e.target.value)} onBlur={() => setTouched(t => ({ ...t, confirm: true }))}
+            error={confirmError} />
+          <Button type="submit" block size="lg" loading={loading}>{loading ? 'Creating account…' : 'Create account'}</Button>
         </form>
-
-
-        <p className="mt-4 text-center text-white text-sm">
-          Already Have an Account?{' '}
-          <Link to="/login" className="font-semibold hover:underline hover:text-red-300">
-            Login
-          </Link>
-        </p>
-      </div>
-    </div>
+      )}
+    </AuthLayout>
   );
 }
-
-export default Signup;

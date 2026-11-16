@@ -69,7 +69,19 @@ const HEADLESS = process.env.SCRAPE_HEADLESS === 'true';
 // Collected so the process can exit non-zero and a cron log shows the reason.
 const failures = [];
 
-const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+/**
+ * Today in Boston as YYYY-MM-DD. Assembled from parts because the en-CA short
+ * date has changed shape between ICU releases.
+ */
+function bostonToday(date = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(date);
+  const get = type => parts.find(part => part.type === type).value;
+  return `${get('year')}-${get('month')}-${get('day')}`;
+}
+
+const today = bostonToday();
 
 let browser, page;
 

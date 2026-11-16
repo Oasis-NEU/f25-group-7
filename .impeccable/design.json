@@ -1,0 +1,718 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-16T00:00:00Z",
+  "title": "Design System: NU Dining",
+  "extensions": {
+    "appearance": {
+      "default": "dark",
+      "selector": ":root[data-theme=\"dark\"]",
+      "lightSelector": ":root",
+      "storageKey": "nu-dining:theme",
+      "themeColor": {
+        "dark": "#0F0F10",
+        "light": "#F4F4F5"
+      },
+      "note": "index.html sets data-theme before first paint; the header ThemeToggle flips and saves it."
+    },
+    "colorMeta": {
+      "brand": {
+        "role": "primary",
+        "displayName": "Coral Plate Red",
+        "canonical": "#E0283C",
+        "light": "#D41F35",
+        "cssVar": "--brand",
+        "tonalRamp": [
+          "#380A0F",
+          "#65121B",
+          "#921A27",
+          "#BE2233",
+          "#E65363",
+          "#EE8994",
+          "#F6BEC4",
+          "#FCEAEC"
+        ],
+        "legacyAliases": [
+          "--plate"
+        ]
+      },
+      "brand-ink": {
+        "role": "primary",
+        "displayName": "On Coral",
+        "canonical": "#FFFFFF",
+        "light": "#FFFFFF",
+        "cssVar": "--brand-ink",
+        "tonalRamp": [
+          "#404040",
+          "#737373",
+          "#A6A6A6",
+          "#D9D9D9",
+          "#FFFFFF",
+          "#FFFFFF",
+          "#FFFFFF",
+          "#FFFFFF"
+        ],
+        "legacyAliases": [
+          "--plate-ink"
+        ]
+      },
+      "brand-soft": {
+        "role": "primary",
+        "displayName": "Coral Wash",
+        "canonical": "#3A1A1E",
+        "light": "#FBE9EC",
+        "cssVar": "--brand-soft",
+        "tonalRamp": [
+          "#0E0608",
+          "#1A0C0E",
+          "#261114",
+          "#31161A",
+          "#61484B",
+          "#938183",
+          "#C4BABC",
+          "#EBE8E8"
+        ],
+        "legacyAliases": [
+          "--plate-muted"
+        ]
+      },
+      "brand-text": {
+        "role": "primary",
+        "displayName": "Coral Link Red",
+        "canonical": "#FF6B76",
+        "light": "#C01B30",
+        "cssVar": "--brand-text",
+        "tonalRamp": [
+          "#401B1E",
+          "#733035",
+          "#A6464D",
+          "#D95B64",
+          "#FF8991",
+          "#FFAEB4",
+          "#FFD3D6",
+          "#FFF0F1"
+        ]
+      },
+      "score-high": {
+        "role": "secondary",
+        "displayName": "Score High",
+        "canonical": "#4CD38A",
+        "light": "#13803F",
+        "cssVar": "--score-high",
+        "tonalRamp": [
+          "#133522",
+          "#225F3E",
+          "#31895A",
+          "#41B375",
+          "#70DCA1",
+          "#9DE7BF",
+          "#C9F2DC",
+          "#EDFBF3"
+        ]
+      },
+      "score-mid": {
+        "role": "secondary",
+        "displayName": "Score Mid",
+        "canonical": "#E8B54A",
+        "light": "#9A6A00",
+        "cssVar": "--score-mid",
+        "tonalRamp": [
+          "#3A2D12",
+          "#685121",
+          "#977630",
+          "#C59A3F",
+          "#EDC46E",
+          "#F2D69B",
+          "#F8E9C9",
+          "#FDF8ED"
+        ]
+      },
+      "score-low": {
+        "role": "secondary",
+        "displayName": "Score Low",
+        "canonical": "#FF7A7A",
+        "light": "#C0262D",
+        "cssVar": "--score-low",
+        "tonalRamp": [
+          "#401E1E",
+          "#733737",
+          "#A64F4F",
+          "#D96868",
+          "#FF9595",
+          "#FFB6B6",
+          "#FFD7D7",
+          "#FFF2F2"
+        ]
+      },
+      "open": {
+        "role": "tertiary",
+        "displayName": "Open Green",
+        "canonical": "#4CD38A",
+        "light": "#13803F",
+        "cssVar": "--open",
+        "tonalRamp": [
+          "#133522",
+          "#225F3E",
+          "#31895A",
+          "#41B375",
+          "#70DCA1",
+          "#9DE7BF",
+          "#C9F2DC",
+          "#EDFBF3"
+        ]
+      },
+      "open-soft": {
+        "role": "tertiary",
+        "displayName": "Open Wash",
+        "canonical": "#10291B",
+        "light": "#E6F4EA",
+        "cssVar": "--open-soft",
+        "tonalRamp": [
+          "#040A07",
+          "#07120C",
+          "#0A1B12",
+          "#0E2317",
+          "#405449",
+          "#7C8982",
+          "#B7BFBB",
+          "#E7EAE8"
+        ]
+      },
+      "warn": {
+        "role": "tertiary",
+        "displayName": "Soon Amber",
+        "canonical": "#FFB340",
+        "light": "#A84B00",
+        "cssVar": "--warn",
+        "tonalRamp": [
+          "#402D10",
+          "#73511D",
+          "#A6742A",
+          "#D99836",
+          "#FFC266",
+          "#FFD596",
+          "#FFE8C6",
+          "#FFF7EC"
+        ]
+      },
+      "warn-soft": {
+        "role": "tertiary",
+        "displayName": "Amber Wash",
+        "canonical": "#33240C",
+        "light": "#FDF0E2",
+        "cssVar": "--warn-soft",
+        "tonalRamp": [
+          "#0D0903",
+          "#171005",
+          "#211708",
+          "#2B1F0A",
+          "#5C503D",
+          "#8F8779",
+          "#C2BDB6",
+          "#EBE9E7"
+        ]
+      },
+      "danger": {
+        "role": "tertiary",
+        "displayName": "Danger",
+        "canonical": "#FF8792",
+        "light": "#B00D25",
+        "cssVar": "--danger",
+        "tonalRamp": [
+          "#402224",
+          "#733D42",
+          "#A6585F",
+          "#D9737C",
+          "#FF9FA8",
+          "#FFBDC3",
+          "#FFDBDE",
+          "#FFF3F4"
+        ]
+      },
+      "danger-soft": {
+        "role": "tertiary",
+        "displayName": "Danger Wash",
+        "canonical": "#3A1519",
+        "light": "#FBEAEC",
+        "cssVar": "--danger-soft",
+        "tonalRamp": [
+          "#0E0506",
+          "#1A090B",
+          "#260E10",
+          "#311215",
+          "#614447",
+          "#937E80",
+          "#C4B9BA",
+          "#EBE8E8"
+        ]
+      },
+      "gold": {
+        "role": "tertiary",
+        "displayName": "Gold",
+        "canonical": "#E8B64C",
+        "light": "#8A5A06",
+        "cssVar": "--gold",
+        "tonalRamp": [
+          "#3A2E13",
+          "#685222",
+          "#977631",
+          "#C59B41",
+          "#EDC570",
+          "#F2D79D",
+          "#F8E9C9",
+          "#FDF8ED"
+        ]
+      },
+      "gold-soft": {
+        "role": "tertiary",
+        "displayName": "Gold Wash",
+        "canonical": "#33280F",
+        "light": "#FBF1DA",
+        "cssVar": "--gold-soft",
+        "tonalRamp": [
+          "#0D0A04",
+          "#171207",
+          "#211A0A",
+          "#2B220D",
+          "#5C533F",
+          "#8F897B",
+          "#C2BEB7",
+          "#EBEAE7"
+        ]
+      },
+      "series-1": {
+        "role": "tertiary",
+        "displayName": "Series Blue",
+        "canonical": "#3987e5",
+        "light": "#2a78d6",
+        "cssVar": "--series-1",
+        "tonalRamp": [
+          "#0E2239",
+          "#1A3D67",
+          "#255895",
+          "#3073C3",
+          "#619FEA",
+          "#92BDF1",
+          "#C4DBF7",
+          "#EBF3FC"
+        ]
+      },
+      "bg": {
+        "role": "neutral",
+        "displayName": "Night Ground",
+        "canonical": "#0F0F10",
+        "light": "#F4F4F5",
+        "cssVar": "--bg",
+        "tonalRamp": [
+          "#0F0F10",
+          "#1A1A1C",
+          "#2E2E32",
+          "#55555C",
+          "#908D87",
+          "#ABA8A2",
+          "#E2E2E5",
+          "#F4F4F5"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Card",
+        "canonical": "#1A1A1C",
+        "light": "#FFFFFF",
+        "cssVar": "--surface",
+        "tonalRamp": [
+          "#0F0F10",
+          "#1A1A1C",
+          "#2E2E32",
+          "#55555C",
+          "#908D87",
+          "#ABA8A2",
+          "#E2E2E5",
+          "#F4F4F5"
+        ]
+      },
+      "surface-2": {
+        "role": "neutral",
+        "displayName": "Raised Fill",
+        "canonical": "#242427",
+        "light": "#ECECEE",
+        "cssVar": "--surface-2",
+        "tonalRamp": [
+          "#0F0F10",
+          "#1A1A1C",
+          "#2E2E32",
+          "#55555C",
+          "#908D87",
+          "#ABA8A2",
+          "#E2E2E5",
+          "#F4F4F5"
+        ]
+      },
+      "surface-3": {
+        "role": "neutral",
+        "displayName": "Pressed Fill",
+        "canonical": "#2E2E32",
+        "light": "#E2E2E5",
+        "cssVar": "--surface-3",
+        "tonalRamp": [
+          "#0F0F10",
+          "#1A1A1C",
+          "#2E2E32",
+          "#55555C",
+          "#908D87",
+          "#ABA8A2",
+          "#E2E2E5",
+          "#F4F4F5"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Warm Ink",
+        "canonical": "#F3F1ED",
+        "light": "#141416",
+        "cssVar": "--ink",
+        "tonalRamp": [
+          "#0F0F10",
+          "#1A1A1C",
+          "#2E2E32",
+          "#55555C",
+          "#908D87",
+          "#ABA8A2",
+          "#E2E2E5",
+          "#F4F4F5"
+        ]
+      },
+      "ink-muted": {
+        "role": "neutral",
+        "displayName": "Muted Ink",
+        "canonical": "#ABA8A2",
+        "light": "#55555C",
+        "cssVar": "--ink-muted",
+        "tonalRamp": [
+          "#0F0F10",
+          "#1A1A1C",
+          "#2E2E32",
+          "#55555C",
+          "#908D87",
+          "#ABA8A2",
+          "#E2E2E5",
+          "#F4F4F5"
+        ]
+      },
+      "ink-subtle": {
+        "role": "neutral",
+        "displayName": "Subtle Ink",
+        "canonical": "#908D87",
+        "light": "#6B6B73",
+        "cssVar": "--ink-subtle",
+        "tonalRamp": [
+          "#0F0F10",
+          "#1A1A1C",
+          "#2E2E32",
+          "#55555C",
+          "#908D87",
+          "#ABA8A2",
+          "#E2E2E5",
+          "#F4F4F5"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "#2C2C30",
+        "light": "#E2E2E5",
+        "cssVar": "--line",
+        "tonalRamp": [
+          "#0F0F10",
+          "#1A1A1C",
+          "#2E2E32",
+          "#55555C",
+          "#908D87",
+          "#ABA8A2",
+          "#E2E2E5",
+          "#F4F4F5"
+        ]
+      },
+      "line-strong": {
+        "role": "neutral",
+        "displayName": "Strong Line",
+        "canonical": "#6E6C68",
+        "light": "#8D8D94",
+        "cssVar": "--line-strong",
+        "tonalRamp": [
+          "#0F0F10",
+          "#1A1A1C",
+          "#2E2E32",
+          "#55555C",
+          "#908D87",
+          "#ABA8A2",
+          "#E2E2E5",
+          "#F4F4F5"
+        ]
+      },
+      "card-line": {
+        "role": "neutral",
+        "displayName": "Card Edge",
+        "canonical": "#262629",
+        "light": "#E6E6E9",
+        "cssVar": "--card-line",
+        "tonalRamp": [
+          "#0F0F10",
+          "#1A1A1C",
+          "#2E2E32",
+          "#55555C",
+          "#908D87",
+          "#ABA8A2",
+          "#E2E2E5",
+          "#F4F4F5"
+        ]
+      }
+    },
+    "legacyAliases": {
+      "note": "Kept only so older screens resolve. Not part of the system; do not use in new code.",
+      "--plate": "--brand",
+      "--plate-ink": "--brand-ink",
+      "--plate-muted": "--brand-soft",
+      "--g1": "--surface-2",
+      "--g2": "--surface-3",
+      "--g3": "--line",
+      "--g4": "--line-strong",
+      "--g5": "--line-strong",
+      "--g6": "--ink-subtle",
+      "--g7": "--ink-muted",
+      "--g8": "#2A2A2E light / #D9D6D0 dark",
+      "--g9": "--ink"
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "The single big figure on a data screen (Tracker calories left). Not a page title."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Page titles and auth screens."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Picks shelf heading and hall card names on Today."
+      },
+      "title-sm": {
+        "displayName": "Title small",
+        "purpose": "Station names above their cards, sheet titles, empty-state titles."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Running text and sheet descriptions; reading width near 42rem."
+      },
+      "dish-name": {
+        "displayName": "Dish name",
+        "purpose": "The name in every dish row (600 on pick tiles and ranking options)."
+      },
+      "subhead": {
+        "displayName": "Subhead",
+        "purpose": "Status lines, counts, chips, small buttons, link actions (400 or 600)."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Second line under a dish, tile station names, nutrition labels, tab bar labels."
+      },
+      "score-numeral": {
+        "displayName": "Score numeral",
+        "purpose": "Only inside score rings and score-range pills; 0.8125rem to 2.75rem by ring size, tabular, 700."
+      }
+    },
+    "shadows": [
+      {
+        "name": "card",
+        "value": "0 1px 2px rgb(0 0 0 / 0.05), 0 6px 16px -6px rgb(0 0 0 / 0.08)",
+        "dark": "none",
+        "purpose": "Ambient lift for cards, tiles, sheets, menus and the active hall pill in light mode; dark mode raises by tone instead."
+      },
+      {
+        "name": "material-bar",
+        "value": "background: rgb(15 15 16 / 0.86) dark, rgb(244 244 245 / 0.86) light; backdrop-filter: saturate(180%) blur(20px)",
+        "purpose": "Header and tab bar only; solid ground under prefers-reduced-transparency."
+      },
+      {
+        "name": "scrim",
+        "value": "rgb(0 0 0 / 0.6) dark, rgb(0 0 0 / 0.4) light",
+        "purpose": "Behind sheets."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-apple",
+        "value": "cubic-bezier(0.25, 0.1, 0.25, 1)",
+        "purpose": "All state transitions; buttons 200ms, rows and chips 150ms, fades 220ms."
+      },
+      {
+        "name": "ease-spring",
+        "value": "linear(0, 0.016, 0.063 2.4%, 0.233 5%, 0.453 7.9%, 0.672 11.3%, 0.84 15.1%, 0.946 19.4%, 1.002 24.1%, 1.02 29.5%, 1.016 36%, 1.004 45%, 1)",
+        "purpose": "Sheets settling (420ms) and ranking steps (320ms); about 2% overshoot."
+      },
+      {
+        "name": "ease-spring-lively",
+        "value": "linear(0, 0.03, 0.12 3%, 0.42 8%, 0.79 13%, 1.03 18%, 1.1 22%, 1.09 26%, 1.03 32%, 0.99 38%, 0.985 44%, 1 56%, 1)",
+        "purpose": "The one celebratory moment: a ranking score landing (560ms)."
+      },
+      {
+        "name": "press",
+        "value": "transform: scale(0.98)",
+        "purpose": "Buttons, pick tiles and ranking options on press."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "durations 0.01ms",
+        "purpose": "prefers-reduced-motion collapses all animation."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      }
+    ],
+    "focus": {
+      "value": "outline: 2px solid var(--brand-text); outline-offset: 2px",
+      "purpose": "Every keyboard-reachable element, never removed."
+    }
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one coral action on a surface: Rank this dish, Try again.",
+      "html": "<button class=\"ds-btn-primary\">Rank this dish</button>",
+      "css": ".ds-btn-primary{font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 24px;border:0;border-radius:9999px;background:var(--brand,#E0283C);color:var(--brand-ink,#fff);font-size:1.0625rem;font-weight:600;cursor:pointer;transition:filter 200ms cubic-bezier(0.25, 0.1, 0.25, 1),transform 200ms cubic-bezier(0.25, 0.1, 0.25, 1)}.ds-btn-primary:hover{filter:brightness(1.1)}.ds-btn-primary:active{filter:brightness(.95);transform:scale(.98)}.ds-btn-primary:focus-visible{outline:2px solid var(--brand-text,#FF6B76);outline-offset:2px}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Neutral filled pill for second actions: Add to my log, Sign in.",
+      "html": "<button class=\"ds-btn-secondary\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" aria-hidden=\"true\"><path d=\"M12 5v14M5 12h14\"/></svg>Add to my log</button>",
+      "css": ".ds-btn-secondary{font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 24px;border:0;border-radius:9999px;background:var(--surface-2,#242427);color:var(--ink,#F3F1ED);font-size:1.0625rem;font-weight:600;cursor:pointer;transition:background-color 200ms cubic-bezier(0.25, 0.1, 0.25, 1),transform 200ms cubic-bezier(0.25, 0.1, 0.25, 1)}.ds-btn-secondary:hover{background:var(--surface-3,#2E2E32)}.ds-btn-secondary:active{transform:scale(.98)}.ds-btn-secondary:focus-visible{outline:2px solid var(--brand-text,#FF6B76);outline-offset:2px}"
+    },
+    {
+      "name": "Filter Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Toggle pill for diet and allergen filters; pressed flips to ink and sets aria-pressed.",
+      "html": "<div class=\"ds-chips\"><button class=\"ds-chip\" aria-pressed=\"true\">Vegan</button><button class=\"ds-chip\" aria-pressed=\"false\">Vegetarian</button><button class=\"ds-chip\" aria-pressed=\"false\">Avoiding gluten</button></div>",
+      "css": ".ds-chips{display:flex;gap:8px;flex-wrap:wrap}.ds-chip{font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;min-height:44px;padding:0 16px;border:0;border-radius:9999px;background:var(--surface-2,#242427);color:var(--ink-muted,#ABA8A2);font-size:.9375rem;font-weight:600;cursor:pointer;transition:background-color 150ms,color 150ms}.ds-chip:hover{color:var(--ink,#F3F1ED)}.ds-chip[aria-pressed=true]{background:var(--ink,#F3F1ED);color:var(--bg,#0F0F10)}.ds-chip:focus-visible{outline:2px solid var(--brand-text,#FF6B76);outline-offset:2px}"
+    },
+    {
+      "name": "Station Card",
+      "kind": "card",
+      "refersTo": "station-card",
+      "description": "A station: name and count over one grouped card of dish rows with hairline dividers, rings and chevrons.",
+      "html": "<section class=\"ds-station\"><h2 class=\"ds-station-h\"><span>Cucina</span><span class=\"ds-count\">6</span></h2><ul class=\"ds-card\"><li><button class=\"ds-row\"><span class=\"ds-row-main\"><span class=\"ds-name\">Spicy Street Corn Mac <span class=\"ds-new\">New</span></span><span class=\"ds-sub\">Vegetarian · 760 cal</span></span><span class=\"ds-ring ds-mid\">5.7</span><svg class=\"ds-chev\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><path d=\"m9 18 6-6-6-6\"/></svg></button></li><li><button class=\"ds-row\"><span class=\"ds-row-main\"><span class=\"ds-name\">Chicken Nuggets</span><span class=\"ds-sub\">26 g protein</span></span><span class=\"ds-ring ds-high\">6.9</span><svg class=\"ds-chev\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><path d=\"m9 18 6-6-6-6\"/></svg></button></li><li><button class=\"ds-row ds-more\">Show 4 more</button></li></ul></section>",
+      "css": ".ds-station{font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;color:var(--ink,#F3F1ED);max-width:420px}.ds-station-h{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 8px;padding:0 4px;font-size:1.25rem;font-weight:600;letter-spacing:-.02em}.ds-count{font-size:.9375rem;font-weight:400;color:var(--ink-muted,#ABA8A2);font-variant-numeric:tabular-nums}.ds-card{list-style:none;margin:0;padding:0;overflow:hidden;border-radius:18px;border:1px solid var(--card-line,#262629);background:var(--surface,#1A1A1C);box-shadow:var(--shadow,none)}.ds-card li{border-bottom:1px solid var(--line,#2C2C30)}.ds-card li:last-child{border-bottom:0}.ds-row{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:12px 16px;border:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer;transition:background-color 150ms}.ds-row:hover{background:var(--surface-2,#242427)}.ds-row:active{background:var(--surface-3,#2E2E32)}.ds-row:focus-visible{outline:2px solid var(--brand-text,#FF6B76);outline-offset:-2px}.ds-row-main{flex:1;min-width:0}.ds-name{display:block;font-size:1.0625rem;font-weight:500;line-height:1.375}.ds-new{margin-left:6px;font-size:.8125rem;font-weight:600;color:var(--ink-subtle,#908D87)}.ds-sub{display:block;margin-top:2px;font-size:.8125rem;color:var(--ink-muted,#ABA8A2)}.ds-chev{flex-shrink:0;color:var(--ink-subtle,#908D87)}.ds-more{min-height:48px;font-size:.9375rem;font-weight:600;color:var(--brand-text,#FF6B76)}.ds-ring{display:grid;place-items:center;flex-shrink:0;width:40px;height:40px;border:2px solid;border-radius:9999px;font-size:.8125rem;font-weight:700;font-variant-numeric:tabular-nums}.ds-high{color:var(--score-high,#4CD38A)}.ds-mid{color:var(--score-mid,#E8B54A)}.ds-low{color:var(--score-low,#FF7A7A)}"
+    },
+    {
+      "name": "Score Ring",
+      "kind": "custom",
+      "refersTo": "score-ring",
+      "description": "Beli-style ring: the number always shown, ring and numeral tinted by tier (6.8 and 3.4 cut-offs).",
+      "html": "<div class=\"ds-rings\"><span class=\"ds-r ds-rh\">8.4</span><span class=\"ds-r ds-rm\">5.7</span><span class=\"ds-r ds-rl\">2.1</span><span class=\"ds-r ds-rh ds-rlg\">9.2</span></div>",
+      "css": ".ds-rings{display:flex;gap:16px;align-items:center;font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif}.ds-r{display:grid;place-items:center;width:48px;height:48px;border:2px solid;border-radius:9999px;font-size:.9375rem;font-weight:700;font-variant-numeric:tabular-nums}.ds-rh{color:var(--score-high,#4CD38A)}.ds-rm{color:var(--score-mid,#E8B54A)}.ds-rl{color:var(--score-low,#FF7A7A)}.ds-rlg{width:112px;height:112px;border-width:3px;font-size:2.75rem}"
+    },
+    {
+      "name": "Pick Tile",
+      "kind": "card",
+      "refersTo": "pick-tile",
+      "description": "A tile on the swipeable picks shelf; the next tile peeks.",
+      "html": "<ul class=\"ds-shelf\"><li><button class=\"ds-tile\"><span class=\"ds-t-st\">Cucina <span class=\"ds-t-new\">New</span></span><span class=\"ds-t-name\">Spicy Street Corn Macaroni and Cheese</span><span class=\"ds-t-desc\">Cilantro lime street corn, mac n cheese, hot cheetos.</span><span class=\"ds-t-foot\"><span>760 cal · Vegetarian</span><span class=\"ds-t-ring\">5.7</span></span></button></li><li><button class=\"ds-tile\"><span class=\"ds-t-st\">Homestyle</span><span class=\"ds-t-name\">Chicken Nuggets</span><span class=\"ds-t-foot\"><span>500 cal · 26 g protein</span><span class=\"ds-t-ring ds-t-hi\">6.9</span></span></button></li></ul>",
+      "css": ".ds-shelf{list-style:none;margin:0;padding:0 0 4px;display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;max-width:420px;scrollbar-width:none;font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif}.ds-shelf li{flex:0 0 248px;scroll-snap-align:start}.ds-tile{display:flex;flex-direction:column;width:100%;height:100%;min-height:160px;padding:16px;border:1px solid var(--card-line,#262629);border-radius:18px;background:var(--surface,#1A1A1C);box-shadow:var(--shadow,none);color:var(--ink,#F3F1ED);font:inherit;text-align:left;cursor:pointer;transition:transform 150ms cubic-bezier(0.25, 0.1, 0.25, 1)}.ds-tile:active{transform:scale(.98)}.ds-tile:focus-visible{outline:2px solid var(--brand-text,#FF6B76);outline-offset:2px}.ds-t-st{font-size:.8125rem;color:var(--ink-muted,#ABA8A2)}.ds-t-new{margin-left:6px;font-weight:600;color:var(--ink-subtle,#908D87)}.ds-t-name{margin-top:8px;font-size:1.0625rem;font-weight:600;line-height:1.375}.ds-t-desc{margin-top:6px;font-size:.8125rem;line-height:1.375;color:var(--ink-muted,#ABA8A2)}.ds-t-foot{margin-top:auto;padding-top:16px;display:flex;justify-content:space-between;align-items:flex-end;gap:12px;font-size:.8125rem;color:var(--ink-muted,#ABA8A2)}.ds-t-ring{display:grid;place-items:center;width:40px;height:40px;border:2px solid;border-radius:9999px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--score-mid,#E8B54A)}.ds-t-hi{color:var(--score-high,#4CD38A)}"
+    },
+    {
+      "name": "Search Field",
+      "kind": "input",
+      "refersTo": "search-pill",
+      "description": "The menu search pill; form fields elsewhere are 48px, 12px radius, surface with a line-strong border.",
+      "html": "<label class=\"ds-search\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" aria-hidden=\"true\"><circle cx=\"11\" cy=\"11\" r=\"7\"/><path d=\"m20 20-3.5-3.5\"/></svg><input class=\"ds-search-input\" placeholder=\"Search lunch\" aria-label=\"Search this menu\"></label>",
+      "css": ".ds-search{position:relative;display:block;max-width:420px;color:var(--ink-subtle,#908D87)}.ds-search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);pointer-events:none}.ds-search-input{font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;width:100%;min-height:44px;padding:0 44px;border:0;border-radius:9999px;background:var(--surface-2,#242427);color:var(--ink,#F3F1ED);font-size:1.0625rem}.ds-search-input::placeholder{color:var(--ink-subtle,#908D87)}.ds-search-input:focus{outline:2px solid var(--brand-text,#FF6B76)}"
+    },
+    {
+      "name": "Meal Tabs and Hall Switch",
+      "kind": "nav",
+      "refersTo": "segmented-hall-switch",
+      "description": "Segmented hall switch over text meal tabs with a 3px coral underline on the active tab.",
+      "html": "<nav class=\"ds-nav\"><ul class=\"ds-seg\"><li><a class=\"ds-seg-i\" aria-current=\"page\" href=\"#\">Steast</a></li><li><a class=\"ds-seg-i\" href=\"#\">IV</a></li><li><a class=\"ds-seg-i\" href=\"#\">Belvidere</a></li></ul><ul class=\"ds-tabs\"><li><a class=\"ds-tab\" href=\"#\">Breakfast</a></li><li><a class=\"ds-tab\" aria-current=\"page\" href=\"#\">Lunch</a></li><li><a class=\"ds-tab\" href=\"#\">Dinner</a></li></ul></nav>",
+      "css": ".ds-nav{font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;max-width:420px}.ds-nav ul{list-style:none;margin:0;padding:0;display:flex}.ds-seg{padding:4px!important;border-radius:9999px;background:var(--surface-2,#242427);margin-bottom:12px!important}.ds-seg li,.ds-tabs li{flex:1}.ds-seg-i{display:flex;align-items:center;justify-content:center;min-height:44px;border-radius:9999px;font-size:.9375rem;font-weight:500;color:var(--ink-muted,#ABA8A2);text-decoration:none;transition:color 150ms}.ds-seg-i:hover{color:var(--ink,#F3F1ED)}.ds-seg-i[aria-current]{background:var(--surface,#1A1A1C);color:var(--ink,#F3F1ED);font-weight:600;box-shadow:var(--shadow,none),0 0 0 1px var(--card-line,#262629)}.ds-tabs{border-bottom:1px solid var(--line,#2C2C30)}.ds-tab{position:relative;display:flex;align-items:center;justify-content:center;min-height:44px;padding:0 16px;font-size:1.0625rem;color:var(--ink-muted,#ABA8A2);text-decoration:none}.ds-tab:hover{color:var(--ink,#F3F1ED)}.ds-tab[aria-current]{color:var(--ink,#F3F1ED);font-weight:600}.ds-tab[aria-current]::after{content:'';position:absolute;left:12px;right:12px;bottom:-1px;height:3px;background:var(--brand,#E0283C)}.ds-seg-i:focus-visible,.ds-tab:focus-visible{outline:2px solid var(--brand-text,#FF6B76);outline-offset:2px}"
+    },
+    {
+      "name": "Hall Status",
+      "kind": "custom",
+      "description": "Status as a 600-weight word: open green, soon amber, closed ink-subtle.",
+      "html": "<p class=\"ds-status\"><span class=\"ds-open\">Open until 10 PM</span> · Monday</p><p class=\"ds-status\"><span class=\"ds-soon\">Closing soon, 10 AM</span></p><p class=\"ds-status\"><span class=\"ds-closed\">Closed, opens 4 PM</span></p>",
+      "css": ".ds-status{font-family:-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;margin:0 0 6px;font-size:.9375rem;color:var(--ink-muted,#ABA8A2)}.ds-status span{font-weight:600}.ds-open{color:var(--open,#4CD38A)}.ds-soon{color:var(--warn,#FFB340)}.ds-closed{color:var(--ink-subtle,#908D87)}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Late-Night Table",
+    "overview": "NU Dining sits on the same shelf as Resy and Beli: a near-black app by default, warm off-white type, and food presented as tappable things rather than as a document. Every menu is the same three moves: a swipeable shelf of picks, each station as one grouped card of rows, and every dish opening the same bottom sheet. Scores live in Beli-style rings whose number always carries the meaning; the ring's tint only echoes it.\n\nDensity is app-like, not editorial. Rows are 56px tall with a quiet second line, cards are 18px-rounded with hairline dividers between rows, and the type never climbs above 48px. One coral-red accent marks what you can act on and where you are. Everything else is neutral greys with a faint warm cast in dark mode and a cool cast in light mode.\n\nDark is the default appearance; light is a remembered choice. The world was built to replace an editorial \"poster\" world (red plate, run-in text, heavy 800 weights, giant billing type), and those devices are rejected here.",
+    "keyCharacteristics": [
+      "Dark by default (#0F0F10 ground, #1A1A1C cards); light on request, saved under `nu-dining:theme` and applied before first paint.",
+      "Grouped station cards: 18px radius, hairline row dividers, rows that open a sheet.",
+      "A horizontally swiping picks shelf whose next tile always peeks.",
+      "One bottom sheet per dish, the same anatomy everywhere.",
+      "Score rings tinted by tier, number always visible, 700 weight only there.",
+      "One coral-red accent for actions, the active tab and links.",
+      "System sans at 400, 500 and 600."
+    ],
+    "rules": [
+      {
+        "name": "The One Accent Rule",
+        "body": "Coral red means \"act here\" or \"you are here\": a primary button, the active tab, a link. It never fills a card, a header or a section ground.",
+        "section": "colors"
+      },
+      {
+        "name": "The Number Carries It Rule",
+        "body": "Score tint, status colour and tier colour always sit on a number or a word that says the same thing. Colour alone never carries meaning.",
+        "section": "colors"
+      },
+      {
+        "name": "The 600 Ceiling Rule",
+        "body": "Text tops out at 600. 700 is reserved for score numerals; nothing anywhere is heavier.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tabular Number Rule",
+        "body": "Calories, counts, dates, scores and nutrition use tabular figures so columns of numbers hold still.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tone Not Shadow Rule",
+        "body": "In dark mode a surface is raised by stepping `bg` to `surface` to `surface-2`, never by adding a shadow.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** default to dark and read every colour through its role token so the light appearance follows automatically.",
+      "**Do** put a station's dishes in one 18px card with hairline row dividers, and let every row open the dish sheet.",
+      "**Do** show the number inside every score ring, tinted by tier at 6.8 and 3.4.",
+      "**Do** keep coral red to primary buttons, the active tab indicator, links and the focus ring.",
+      "**Do** write status as words (\"Open until 10 PM\"), tinted `open`, `warn` or `ink-subtle`.",
+      "**Do** keep every tap target at least 44px and every pill fully rounded.",
+      "**Do** use `cubic-bezier(0.25, 0.1, 0.25, 1)` for state changes and the springs only for sheets settling and a score landing; respect reduced motion and reduced transparency."
+    ],
+    "donts": [
+      "**Don't** use weights above 600 for text; 700 is only for score numerals, and 800 or 900 never.",
+      "**Don't** fill a card, section or header with coral red, or use it as a status colour.",
+      "**Don't** make \"New\" a filled badge, pill or coloured tag.",
+      "**Don't** let colour alone carry a score, status or selection; pair it with the number, the word or `aria-pressed`/`aria-current`.",
+      "**Don't** bring back the poster devices this world replaced: run-in text, billing-sized type (the unused `headliner` and `support` sizes), or caps-and-tracking labels.",
+      "**Don't** add shadows in dark mode; raise with a tone step instead.",
+      "**Don't** use `plate*` or `g1` to `g9` in new code; they are legacy aliases."
+    ]
+  }
+}

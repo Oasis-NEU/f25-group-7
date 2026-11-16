@@ -1,182 +1,136 @@
-import { useEffect, useState } from 'react';
-import FoodBackground from '../Components/background';
-import { campusNow } from '../functions/campusTime';
-import {
-  FALLBACK_UPDATED,
-  formatSlot,
-  formatTime,
-  groupWeek,
-  mergeHours,
-  openState,
-} from '../functions/hours';
+import { Link } from 'react-router-dom';
+import { RefreshCw } from 'lucide-react';
+import { useHours } from '../state/hours';
+import { StatusText } from '../ui/HallStatus';
+import { describeStatus, noHoursListed, shortTime } from '../ui/status';
+import { Button } from '../ui/Button';
+import { Notice, PageHeader } from '../ui/primitives';
+import { usePageTitle } from '../lib/usePageTitle';
+import { formatIsoDate, relativeDayLabel } from '../functions/campusTime';
+import { FALLBACK_UPDATED, mergeSlots } from '../functions/hours';
 
-const dietaryInfo = [
-  {
-    icon: '🌱',
-    label: 'Vegan',
-    def: 'No animal products of any kind: no meat, dairy, or eggs.',
-  },
-  {
-    icon: '🥦',
-    label: 'Vegetarian',
-    def: 'No meat, poultry, fish, or seafood. May contain eggs or dairy.',
-  },
-  {
-    icon: '💪',
-    label: 'High Protein',
-    def: 'Flagged "Good Source of Protein" by the dining team, typically 15 g or more per serving.',
-  },
-];
+function ago(iso) {
+  const ms = Date.now() - Date.parse(iso);
+  if (!Number.isFinite(ms)) return null;
+  const minutes = Math.round(ms / 60000);
+  if (minutes < 2) return 'just now';
+  if (minutes < 60) return `${minutes} minutes ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 36) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+  const days = Math.round(hours / 24);
+  return `${days} days ago`;
+}
 
-function OpenBadge({ state }) {
-  if (state.open) {
-    return (
-      <span className="shrink-0 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-green-500/15 text-green-300 border border-green-500/25">
-        Open until {formatTime(state.closesAt)}
-      </span>
-    );
-  }
+/** One line saying where the hours on screen came from. */
+export function HoursSourceNote({ className = '' }) {
+  const { source, halls, loading } = useHours();
+  const newest = halls.map(h => h.fetchedAt).filter(Boolean).sort().at(-1);
+  let text;
+  // While the live schedule is loading the page already shows usable hours,
+  // and the Refresh button shows the wait, so the note stays quiet.
+  if (source === 'pending' || loading) return null;
+  if (source === 'live') text = 'Hours are live from DineOnCampus.';
+  else if (source === 'cache') text = `Live hours are unavailable. Showing the copy saved on this device ${ago(newest) ?? ''}.`;
+  else if (source === 'server') text = 'Live hours are unavailable. Showing the last stored weekly schedule.';
+  else text = `Live hours are unavailable. Showing the regular schedule last checked on ${formatIsoDate(FALLBACK_UPDATED, { month: 'long', day: 'numeric', year: 'numeric' })}.`;
+  return <p className={`text-sm text-ink-muted ${className}`} role="status">{text}</p>;
+}
+
+
+/** Explains an empty week instead of implying every hall is shut for good. */
+export function NoHoursNotice({ className = '' }) {
+  const { halls, source } = useHours();
+  if (!noHoursListed(halls, source)) return null;
   return (
-    <span className="shrink-0 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white/6 text-white/40 border border-white/10">
-      {state.opensAt ? `Opens ${formatTime(state.opensAt)}` : 'Closed'}
-    </span>
+    <Notice tone="info" className={className} title="No hours are listed for the coming week">
+      That usually means a break, or that the next schedule has not been published yet. Check the
+      official dining site for updates.
+    </Notice>
   );
 }
 
-// Hours are stable within a semester, so only flag them once a sync is old
-// enough that a semester boundary has probably been missed.
-const STALE_AFTER_DAYS = 30;
+function Times({ day }) {
+  const slots = day.closed ? [] : mergeSlots(day.slots);
+  if (!slots.length) return <span className="text-ink-muted">Closed</span>;
+  return slots.map(slot => (
+    <span key={slot.opens} className="block whitespace-nowrap">{shortTime(slot.opens)}–{shortTime(slot.closes)}</span>
+  ));
+}
+
+const LABELS = [
+  ['Vegan', 'No animal products of any kind: no meat, fish, dairy or eggs.'],
+  ['Vegetarian', 'No meat, poultry, fish or seafood. May contain eggs or dairy.'],
+  ['Avoiding gluten', 'Made without gluten-containing ingredients. Not certified gluten-free: shared kitchens mean cross-contact is possible.'],
+  ['High protein', 'At least 15 g of protein per serving, from the dining team’s nutrition data.'],
+];
 
 export default function Hours() {
-  const [halls, setHalls] = useState(() => mergeHours([]));
-  const [status, setStatus] = useState('loading');
-  const [ageDays, setAgeDays] = useState(null);
-  const [now, setNow] = useState(() => campusNow());
-
-  useEffect(() => {
-    let active = true;
-
-    async function load() {
-      try {
-        const res = await fetch('/api/hours');
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = await res.json();
-        if (!active) return;
-        const merged = mergeHours(json.halls);
-        setHalls(merged);
-        setAgeDays(json.ageDays ?? null);
-        setStatus(merged.some(hall => hall.live) ? 'live' : 'fallback');
-      } catch {
-        // The endpoint is unavailable in local dev and whenever the scraper
-        // has not run, so the bundled schedule is the expected outcome here.
-        if (active) setStatus('fallback');
-      }
-    }
-
-    load();
-    const clock = setInterval(() => setNow(campusNow()), 60_000);
-    return () => { active = false; clearInterval(clock); };
-  }, []);
+  const { halls, now, refresh, loading, source } = useHours();
+  const anyEstimated = halls.some(h => h.days.some(d => d.estimated));
+  usePageTitle('Dining hall hours', 'Opening hours for Stetson East, International Village and 60 Belvidere for the next seven days, live from DineOnCampus.');
 
   return (
-    <div className="min-h-screen bg-black relative overflow-hidden">
-      <FoodBackground />
-
-      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 pt-28 pb-20">
-
-        <div className="text-center mb-14">
-          <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-3">
-            Dining Hall Hours
-          </h1>
-          <p className="text-white/45 text-lg max-w-xl mx-auto">
-            Opening times and dietary labels for the three residential halls.
-          </p>
-        </div>
-
-        {status === 'live' && ageDays !== null && ageDays > STALE_AFTER_DAYS && (
-          <div className="mb-8 rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-center">
-            <p className="text-amber-200/90 text-sm">
-              These hours were last synced {ageDays} days ago, so they may be from a previous semester.
-            </p>
-          </div>
+    <>
+      <PageHeader
+        title="Dining hall hours"
+        actions={(
+          <Button variant="secondary" size="sm" onClick={refresh} loading={loading}>
+            {!loading && <RefreshCw className="size-4" aria-hidden="true" />} Refresh
+          </Button>
         )}
+      >
+        The next seven days at the three residential halls.
+      </PageHeader>
 
-        <div className="grid md:grid-cols-3 gap-6 mb-14">
-          {halls.map(hall => {
-            const state = openState(hall.days, now);
-            return (
-              <div
-                key={hall.name}
-                className="bg-white/4 backdrop-blur-sm border border-white/8 rounded-2xl p-6 flex flex-col gap-5"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h2 className="text-xl font-bold text-white">{hall.name}</h2>
-                    <p className="text-[11px] text-red-400/70 mt-0.5 leading-snug">{hall.locationName}</p>
-                  </div>
-                  <OpenBadge state={state} />
+      {source !== 'live' && source !== 'pending' && anyEstimated && (
+        <Notice tone="warn" className="mb-6" title="Some days show usual hours">
+          Live hours could not be loaded, so some days repeat the regular weekly pattern. Check the
+          official site before a holiday or break.
+        </Notice>
+      )}
+
+      <NoHoursNotice className="mb-6" />
+
+      {/* Phones: one hall at a time, so no hall hides off the edge. */}
+      {/* One card per hall, the next seven days as rows; three across on wide screens. */}
+      <div className="grid items-start gap-4 md:grid-cols-3">
+        {halls.map(hall => (
+          <section key={hall.slug} aria-labelledby={`hours-${hall.slug}`} className="overflow-hidden rounded-card border border-card-line bg-surface shadow-card">
+            <div className="px-4 pb-3 pt-4">
+              <h2 id={`hours-${hall.slug}`} className="text-lg font-semibold">
+                <Link to={`/menu/${hall.slug}`} className="hover:underline">{hall.name}</Link>
+              </h2>
+              <StatusText status={describeStatus(hall.days, now)} className="text-sm" />
+            </div>
+            <dl className="border-t border-line text-sm tabular">
+              {hall.days.map((day, i) => (
+                <div key={day.date} className="flex min-h-12 items-baseline justify-between gap-4 border-b border-line px-4 py-3 last:border-b-0">
+                  <dt className={i === 0 ? 'font-semibold' : 'text-ink-muted'}>
+                    {relativeDayLabel(day.date)}
+                    {day.special && <span className="ml-2 text-xs font-semibold text-ink">Special hours</span>}
+                  </dt>
+                  <dd className={`text-right ${i === 0 ? 'font-semibold' : ''}`}><Times day={day} /></dd>
                 </div>
-
-                <p className="text-sm text-white/45 leading-relaxed">{hall.description}</p>
-
-                <div className="space-y-2.5">
-                  {groupWeek(hall.days).map(row => (
-                    <div key={row.label} className="flex flex-col gap-0.5">
-                      <span className="text-[10px] uppercase tracking-widest text-white/25">{row.label}</span>
-                      {row.closed ? (
-                        <span className="text-sm font-semibold text-red-400/60">Closed</span>
-                      ) : (
-                        <div className="flex flex-col gap-0.5">
-                          {row.slots.map(slot => (
-                            <span key={`${slot.opens}-${slot.closes}`} className="text-sm font-semibold text-white">
-                              {formatSlot(slot)}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                  {hall.note && (
-                    <span className="block text-[11px] text-white/30 italic pt-1">{hall.note}</span>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="bg-white/4 backdrop-blur-sm border border-white/8 rounded-2xl p-8">
-          <h2 className="text-2xl font-bold text-white mb-1 text-center">Dietary Labels</h2>
-          <p className="text-white/35 text-sm text-center mb-8">
-            Every label comes straight from the DineOnCampus data. None of them are estimated.
-          </p>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            {dietaryInfo.map(item => (
-              <div key={item.label} className="flex flex-col gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">{item.icon}</span>
-                  <span className="text-white font-semibold">{item.label}</span>
-                </div>
-                <p className="text-sm text-white/45 leading-relaxed">{item.def}</p>
-              </div>
-            ))}
-          </div>
-
-          <p className="mt-8 pt-5 border-t border-white/6 text-[11px] text-white/20 text-center">
-            {status === 'loading' && 'Checking for the latest hours.'}
-            {status === 'live' && (
-              ageDays === null
-                ? 'Hours synced from DineOnCampus. Times can change during finals, breaks and holidays.'
-                : ageDays === 0
-                  ? 'Hours synced from DineOnCampus today. Times can change during finals, breaks and holidays.'
-                  : `Hours synced from DineOnCampus ${ageDays} ${ageDays === 1 ? 'day' : 'days'} ago. Times can change during finals, breaks and holidays.`
-            )}
-            {status === 'fallback' && `No synced hours are stored yet, so this is the schedule last checked on ${FALLBACK_UPDATED}. Times can change during finals, breaks and holidays.`}
-          </p>
-        </div>
-
+              ))}
+            </dl>
+          </section>
+        ))}
       </div>
-    </div>
+
+      <HoursSourceNote className="mt-4" />
+
+      <section aria-labelledby="labels-heading" className="mt-12 max-w-3xl">
+        <h2 id="labels-heading" className="px-1 text-xl font-semibold">About the dietary labels</h2>
+        <p className="mt-1 px-1 text-sm text-ink-muted">From the dining team’s data. With a serious allergy, confirm with staff.</p>
+        <dl className="mt-3 overflow-hidden rounded-card border border-card-line bg-surface shadow-card">
+          {LABELS.map(([term, definition]) => (
+            <div key={term} className="grid gap-1 border-b border-line px-4 py-3 last:border-b-0 sm:grid-cols-[10rem_1fr] sm:gap-4">
+              <dt className="font-semibold">{term}</dt>
+              <dd className="text-sm text-ink-muted">{definition}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+    </>
   );
 }
