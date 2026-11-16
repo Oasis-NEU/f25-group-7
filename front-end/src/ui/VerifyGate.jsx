@@ -40,7 +40,7 @@ export function VerifyGate({ feature = 'This page' }) {
   async function resend() {
     setState('sending');
     try { await resendVerification(); setState('sent'); }
-    catch (err) { setState(/too-many|too many/i.test(err?.message ?? '') ? 'throttled' : 'error'); }
+    catch (err) { setState(err?.message || 'error'); }
   }
 
   return (
@@ -56,8 +56,7 @@ export function VerifyGate({ feature = 'This page' }) {
       <p role="status" className="mt-3 min-h-6 text-sm">
         {state === 'not-yet' && 'Not verified yet. Open the link in the email, then try again.'}
         {state === 'sent' && 'Sent. It can take a few minutes to arrive.'}
-        {state === 'throttled' && 'Too many links in a short time. Wait a few minutes, then send again.'}
-        {state === 'error' && 'The link could not be sent. Try again in a minute.'}
+        {!['idle', 'checking', 'sending', 'not-yet', 'sent'].includes(state) && (state === 'error' ? 'The link could not be sent. Try again in a minute.' : state)}
       </p>
 
       <section aria-labelledby="no-email" className="mt-10 border-t border-line pt-6">

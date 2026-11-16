@@ -105,7 +105,7 @@ function VerifyBanner() {
           <span role="status" className="ml-1 text-ink-muted">
             {state === 'not-yet' && 'Not verified yet.'}
             {state === 'sent' && 'Sent again.'}
-            {state === 'error' && 'Could not send. Try again shortly.'}
+            {!['idle', 'checking', 'not-yet', 'sent'].includes(state) && state}
           </span>
         </p>
         <div className="flex gap-4 font-semibold">
@@ -114,7 +114,7 @@ function VerifyBanner() {
             {state === 'checking' ? 'Checking…' : 'I’ve verified it'}
           </button>
           <button type="button" className="min-h-11 text-ink-muted underline-offset-4 hover:text-ink hover:underline"
-            onClick={async () => { try { await resendVerification(); setState('sent'); } catch { setState('error'); } }}>
+            onClick={async () => { try { await resendVerification(); setState('sent'); } catch (err) { setState(err.message); } }}>
             Send again
           </button>
         </div>

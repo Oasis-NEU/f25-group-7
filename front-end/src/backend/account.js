@@ -11,7 +11,8 @@ const MESSAGES = {
   'auth/email-already-in-use': 'An account already uses that email. Sign in instead, or reset the password.',
   'auth/weak-password': 'Choose a longer password: at least 8 characters.',
   'auth/invalid-email': 'That does not look like an email address.',
-  'auth/too-many-requests': 'Too many attempts right now. Wait a few minutes and try again.',
+  'auth/too-many-requests': 'Too many links sent to this account recently. Wait about an hour, then send one more.',
+  'auth/quota-exceeded': 'The daily email limit was reached. Try again tomorrow.',
   'auth/network-request-failed': 'The account service could not be reached. Check your connection and try again.',
   'auth/expired-action-code': 'This link has expired. Request a new one.',
   'auth/invalid-action-code': 'This link has already been used or is not valid. Request a new one.',
@@ -83,7 +84,14 @@ export async function resendVerification() {
   if (!auth.currentUser) throw new Error('Sign in first.');
   try {
     await authApi.sendEmailVerification(auth.currentUser, { url: `${window.location.origin}/home` });
-  } catch (err) {
+  } catch (first) {
+    let err = first;
+    // A site address Firebase does not list (a preview deploy) rejects the
+    // return link; the email still works without one.
+    if (/continue-uri|unauthorized-domain/.test(first?.code ?? '')) {
+      try { await authApi.sendEmailVerification(auth.currentUser); return; } catch (retry) { err = retry; }
+    }
+    console.error('Verification email failed', err?.code, err?.message);
     throw new Error(describeAuthError(err));
   }
 }
