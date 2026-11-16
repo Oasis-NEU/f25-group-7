@@ -123,6 +123,20 @@ export async function sendPasswordReset(email) {
 }
 
 /** Completes a reset from the emailed link's oobCode. */
+/** Completes an email-verification link opened in this app, then refreshes the account. */
+export async function applyVerification(code) {
+  const { auth, authApi } = await require();
+  try {
+    await authApi.applyActionCode(auth, code);
+    if (auth.currentUser) {
+      await auth.currentUser.reload();
+      await auth.currentUser.getIdToken(true);
+    }
+  } catch (err) {
+    throw new Error(describeAuthError(err));
+  }
+}
+
 export async function confirmReset(code, password) {
   const { auth, authApi } = await require();
   try {

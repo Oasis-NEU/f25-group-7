@@ -21,6 +21,7 @@ const Login = lazyPage(() => import('./pages/Login'));
 const Signup = lazyPage(() => import('./pages/Signup'));
 const Reset = lazyPage(() => import('./pages/Reset'));
 const SetPass = lazyPage(() => import('./pages/setPass'));
+const AuthAction = lazyPage(() => import('./pages/AuthAction'));
 
 export default function App() {
   return (
@@ -35,6 +36,7 @@ export default function App() {
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/forgot" element={<Reset />} />
                 <Route path="/reset-password" element={<SetPass />} />
+                <Route path="/auth/action" element={<AuthAction />} />
 
                 <Route element={<AppShell />}>
                   <Route path="/" element={<Navigate to="/home" replace />} />

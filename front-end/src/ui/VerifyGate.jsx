@@ -62,8 +62,8 @@ export function VerifyGate({ feature = 'This page' }) {
       <section aria-labelledby="no-email" className="mt-10 border-t border-line pt-6">
         <h2 id="no-email" className="text-lg font-semibold">No email?</h2>
         <ul className="mt-3 list-disc space-y-2 pl-5 text-base text-ink-muted">
-          {SENDER && <li>It comes from <b className="font-semibold text-ink break-all">{SENDER}</b>.</li>}
-          <li>Look in Junk Email in Outlook.</li>
+          <li>Northeastern’s Outlook usually files it under <b className="font-semibold text-ink">Junk Email</b>. Open it there, then choose <b className="font-semibold text-ink">Not junk</b> so the next one reaches your inbox.</li>
+          {SENDER && <li>It comes from <b className="font-semibold text-ink break-all">{SENDER}</b>, subject “Verify your email”.</li>}
           <li>Northeastern’s mail filter can hold it in quarantine. Check <a className="font-semibold text-brand-text" href="https://security.microsoft.com/quarantine" target="_blank" rel="noreferrer">security.microsoft.com/quarantine</a> with your Northeastern login and release it.</li>
         </ul>
       </section>
