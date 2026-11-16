@@ -1,107 +1,60 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import FoodBackground from "../Components/background";
-import { supabase } from '../config/supabaseClient';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { isFirebaseConfigured } from '../backend/firebase';
+import { signIn } from '../backend/account';
+import { AuthLayout } from '../layout/AuthLayout';
+import { Button } from '../ui/Button';
+import { Field, PasswordField } from '../ui/Field';
+import { Notice } from '../ui/primitives';
+import { AccountsUnavailable } from '../ui/AccountsUnavailable';
+import { safeNext } from '../state/auth';
+import { usePageTitle } from '../lib/usePageTitle';
 
-function Login() {
+export default function Login() {
+  usePageTitle('Sign in');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const next = safeNext(params.get('next'));
 
-  const handleSubmit = async (e) => {
+  if (!isFirebaseConfigured) return <AuthLayout title="Sign in"><AccountsUnavailable feature="Signing in" /></AuthLayout>;
+
+  async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
     setError('');
     try {
-    const {data,error} = await supabase.auth.signInWithPassword({
-      email, 
-      password,
-    });
-    if(error){
-      setError("Invalid Password or Email!");
-
-    } else if (data.user) {
-      navigate("/home");
+      await signIn(email, password);
+      navigate(next, { replace: true });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   }
-  catch (err) {
-    setError("Invalid Password or Email!")
-    console.error(err);
-  } finally {
-    setLoading(false);
-  }
-
-  };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-[#000000] px-4 py-12">
-    <FoodBackground/>
-      <div className="flex flex-row items-center mb-6 text-center animate-pulse">
-        <img
-        src="/logo__7_-removebg-preview.png"
-        alt='NU Rate-ON Logo'
-        className='w-24 h-24 sm:w-32 sm:h-32 drop-shadow-md'/>
-      </div>
-      <div className="bg-white/20 backdrop-blur-md rounded-xl shadow-lg p-6 sm:p-8 w-full max-w-md">
-        <h2 className="text-3xl place-self-center-safe font-bold mb-6 text-red-400">Login</h2>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-
-          <div>
-            <label className="block text-sm font-medium mb-2 text-red-400">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-red-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="your@northeastern.edu"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2 text-red-400">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none text-red-400 focus:ring-2 focus:ring-blue-500"
-              placeholder="••••••••"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2 px-4 rounded-lg font-semibold border border-gray-300 bg-white text-red-800 hover:bg-black hover:text-white transition-all duration-200 disabled:opacity-50"
-          >
-            {loading ? 'Logging in...' : 'Login'}
-          </button>
-        </form>
-
-        <p className="mt-4 text-center text-white text-sm">
-          Don't have an account?{' '}
-          <Link to="/signup" className="font-semibold hover:text-red-300 hover:underline cursor-pointer">
-            Sign up
-          </Link>
-        </p>
-        <p className="mt-4 text-center text-white text-sm">
-          Forgot Password?{' '}
-          <Link to="/forgot" className="font-semibold hover:underline hover:text-red-300 cursor-pointer">
-            Reset Password
-          </Link>
-        </p>
-      </div>
-    </div>
+    <AuthLayout
+      title="Sign in"
+      subtitle="Rank dishes, track what you eat and vote each meal. Menus never need an account."
+      footer={(
+        <>
+          <p>New here? <Link to={`/signup${next !== '/home' ? `?next=${encodeURIComponent(next)}` : ''}`} className="font-semibold text-brand-text">Create an account</Link></p>
+          <p><Link to="/forgot" className="font-semibold text-brand-text">Forgot your password?</Link></p>
+        </>
+      )}
+    >
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate={false}>
+        {error && <Notice tone="error" role="alert" title={error} />}
+        <Field label="Email" type="email" autoComplete="email" inputMode="email" required value={email}
+          onChange={e => setEmail(e.target.value)} placeholder="you@northeastern.edu" />
+        <PasswordField label="Password" autoComplete="current-password" required value={password}
+          onChange={e => setPassword(e.target.value)} />
+        <Button type="submit" block size="lg" loading={loading}>{loading ? 'Signing in…' : 'Sign in'}</Button>
+      </form>
+    </AuthLayout>
   );
 }
-
-export default Login;

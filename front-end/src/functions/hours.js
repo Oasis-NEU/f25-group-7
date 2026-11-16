@@ -24,22 +24,19 @@ function week(byDay) {
 }
 
 /**
- * Shown when /api/hours has no rows, which is the case until the scraper has
- * run at least once.
+ * The last-resort schedule, used only when DineOnCampus, our API and this
+ * browser's saved copy are all unavailable. The page labels it with this
+ * date, so an old copy reads as old rather than as current.
  *
- * Checked against the live DineOnCampus weekly_schedule on 2026-09-11 and it
- * matched for every ordinary day. The only differences were days the API
- * itself flagged with has_special_hours, which were Labor Day weekend, so
- * they are deliberately not baked in here. Re-verify each semester.
+ * Checked against the live DineOnCampus weekly_schedule on 2026-09-11 and
+ * again on 2026-10-18; it matched for every ordinary day both times.
  */
-export const FALLBACK_UPDATED = '2026-09-11';
+export const FALLBACK_UPDATED = '2026-10-18';
 
 export const HALLS = [
   {
     name: 'Stetson East',
     locationName: 'The Eatery at Stetson East',
-    description:
-      'The largest residential hall on campus, open all day every day with the widest choice of stations.',
     days: week({
       0: [['08:00', '22:00']],
       1: [['07:00', '22:00']],
@@ -53,8 +50,6 @@ export const HALLS = [
   {
     name: 'International Village',
     locationName: 'United Table at International Village',
-    description:
-      'Global cuisines on a rotating menu: Latin Kitchen, Spice Bowl, Sushi, Pomodoro and more. Open every day.',
     days: week({
       0: [['08:00', '21:00']],
       1: [['08:00', '22:00']],
@@ -68,9 +63,6 @@ export const HALLS = [
   {
     name: '60 Belvidere',
     locationName: 'Campus Roots at 60 Belvidere',
-    description:
-      'A smaller hall near Symphony Hall. Breakfast and dinner only, with no lunch service, and closed on weekends.',
-    note: 'No lunch service',
     days: week({
       0: [['10:00', '14:00'], ['16:00', '20:00']],
       1: [['08:00', '10:00'], ['16:00', '20:00']],
@@ -87,12 +79,20 @@ export function toMinutes(hhmm) {
   return hour * 60 + minute;
 }
 
-/** "17:30" becomes "5:30 PM". */
+/** "17:30" becomes "5:30 PM". "24:00", a close at midnight, becomes "12:00 AM". */
 export function formatTime(hhmm) {
-  const [hour, minute] = String(hhmm).split(':').map(Number);
+  const [rawHour, minute] = String(hhmm).split(':').map(Number);
+  const hour = rawHour % 24;
   const suffix = hour >= 12 ? 'PM' : 'AM';
   const hour12 = hour % 12 === 0 ? 12 : hour % 12;
   return `${hour12}:${String(minute).padStart(2, '0')} ${suffix}`;
+}
+
+/** Closing minute of a slot, pushed past midnight when it closes the next day. */
+function closingMinutes(slot) {
+  const opens = toMinutes(slot.opens);
+  const closes = toMinutes(slot.closes);
+  return closes <= opens ? closes + 1440 : closes;
 }
 
 export function formatSlot(slot) {
@@ -116,8 +116,8 @@ export function mergeSlots(slots) {
   const merged = [];
   for (const slot of sorted) {
     const previous = merged[merged.length - 1];
-    if (previous && toMinutes(slot.opens) <= toMinutes(previous.closes)) {
-      if (toMinutes(slot.closes) > toMinutes(previous.closes)) previous.closes = slot.closes;
+    if (previous && toMinutes(slot.opens) <= closingMinutes(previous)) {
+      if (closingMinutes(slot) > closingMinutes(previous)) previous.closes = slot.closes;
     } else {
       merged.push({ ...slot });
     }
@@ -154,19 +154,51 @@ export function groupWeek(days) {
   }));
 }
 
-/** Whether a hall is serving right now, and when that changes. */
+/**
+ * Whether a hall is serving right now, and when that changes.
+ *
+ * A window that runs past midnight (closing at or before it opens, or at
+ * 24:00 and beyond) keeps the hall open into the early hours of the next day.
+ */
 export function openState(days, now = campusNow()) {
-  const todayEntry = (days ?? []).find(entry => entry.day === now.day);
+  const list = days ?? [];
+  const todayEntry = list.find(entry => (now.date && entry.date ? entry.date === now.date : entry.day === now.day));
   const slots = todayEntry && !todayEntry.closed ? mergeSlots(todayEntry.slots) : [];
 
   for (const slot of slots) {
-    if (now.minutes >= toMinutes(slot.opens) && now.minutes < toMinutes(slot.closes)) {
+    if (now.minutes >= toMinutes(slot.opens) && now.minutes < closingMinutes(slot)) {
+      return { open: true, closesAt: slot.closes };
+    }
+  }
+
+  // Still inside yesterday's late window?
+  const yesterdayDay = (now.day + 6) % 7;
+  const yesterday = list.find(entry => entry.day === yesterdayDay && entry !== todayEntry);
+  for (const slot of yesterday && !yesterday.closed ? mergeSlots(yesterday.slots) : []) {
+    if (closingMinutes(slot) > 1440 && now.minutes < closingMinutes(slot) - 1440) {
       return { open: true, closesAt: slot.closes };
     }
   }
 
   const upcoming = slots.find(slot => toMinutes(slot.opens) > now.minutes);
   return { open: false, opensAt: upcoming ? upcoming.opens : null };
+}
+
+/**
+ * The next time a closed hall opens, looking across the days provided.
+ * Returns { dayOffset, opens } or null when nothing in range opens.
+ * `days` must be in date order starting today, as loadHours returns them.
+ */
+export function nextOpening(days, now = campusNow()) {
+  const list = days ?? [];
+  for (let offset = 0; offset < list.length; offset++) {
+    const entry = list[offset];
+    if (!entry || entry.closed) continue;
+    for (const slot of mergeSlots(entry.slots)) {
+      if (offset > 0 || toMinutes(slot.opens) > now.minutes) return { dayOffset: offset, opens: slot.opens, date: entry.date ?? null };
+    }
+  }
+  return null;
 }
 
 /**

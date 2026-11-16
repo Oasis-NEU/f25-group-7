@@ -1,0 +1,473 @@
+{
+ "status": "success",
+ "request_time": 4.73151071,
+ "records": 0,
+ "the_locations": [
+  {
+   "id": "5e6799901ca48e10a3c876a5",
+   "name": "Subway",
+   "status": {
+    "label": "closed",
+    "message": "Closed. Opens tomorrow at 11:00am.",
+    "color": "red"
+   },
+   "week": [
+    {
+     "day": 0,
+     "date": "2026-10-18",
+     "status": "closed",
+     "hours": [],
+     "has_special_hours": false,
+     "closed": true
+    },
+    {
+     "day": 1,
+     "date": "2026-10-19",
+     "status": "open",
+     "hours": [
+      {
+       "start_hour": 11,
+       "start_minutes": 0,
+       "end_hour": 18,
+       "end_minutes": 0
+      }
+     ],
+     "has_special_hours": false,
+     "closed": false
+    },
+    {
+     "day": 2,
+     "date": "2026-10-20",
+     "status": "open",
+     "hours": [
+      {
+       "start_hour": 11,
+       "start_minutes": 0,
+       "end_hour": 18,
+       "end_minutes": 0
+      }
+     ],
+     "has_special_hours": false,
+     "closed": false
+    },
+    {
+     "day": 3,
+     "date": "2026-10-21",
+     "status": "open",
+     "hours": [
+      {
+       "start_hour": 11,
+       "start_minutes": 0,
+       "end_hour": 18,
+       "end_minutes": 0
+      }
+     ],
+     "has_special_hours": false,
+     "closed": false
+    },
+    {
+     "day": 4,
+     "date": "2026-10-22",
+     "status": "open",
+     "hours": [
+      {
+       "start_hour": 11,
+       "start_minutes": 0,
+       "end_hour": 18,
+       "end_minutes": 0
+      }
+     ],
+     "has_special_hours": false,
+     "closed": false
+    },
+    {
+     "day": 5,
+     "date": "2026-10-23",
+     "status": "open",
+     "hours": [
+      {
+       "start_hour": 11,
+       "start_minutes": 0,
+       "end_hour": 16,
+       "end_minutes": 0
+      }
+     ],
+     "has_special_hours": false,
+     "closed": false
+    },
+    {
+     "day": 6,
+     "date": "2026-10-24",
+     "status": "closed",
+     "hours": [],
+     "has_special_hours": false,
+     "closed": true
+    }
+   ]
+  },
+  {
+   "id": "5f4f8a425e42ad17329be131",
+   "name": "United Table at International Village",
+   "status": {
+    "label": "open",
+    "message": "Open. Closes at 9:00pm.",
+    "color": "green"
+   },
+   "week": [
+    {
+     "day": 0,
+     "date": "2026-10-18",
+     "status": "open",
+     "hours": [
+      {
+       "start_hour": 8,
+       "start_minutes": 0,
+       "end_hour": 21,
+       "end_minutes": 0
+      }
+     ],
+     "has_special_hours": false,
+     "closed": false
+    },
+    {
+     "day": 1,
+     "date": "2026-10-19",
+     "status": "open",
+     "hours": [
+      {
+       "start_hour": 8,
+       "start_minutes": 0,
+       "end_hour": 22,
+       "end_minutes": 0
+      }
+     ],
+     "has_special_hours": false,
+     "closed": false
+    },
+    {
+     "day": 2,
+     "date": "2026-10-20",
+     "status": "open",
+     "hours": [
+      {
+       "start_hour": 8,
+       "start_minutes": 0,
+       "end_hour": 22,
+       "end_minutes": 0
+      }
+     ],
+     "has_special_hours": false,
+     "closed": false
+    },
+    {
+     "day": 3,
+     "date": "2026-10-21",
+     "status": "open",
+     "hours": [
+      {
+       "start_hour": 8,
+       "start_minutes": 0,
+       "end_hour": 22,
+       "end_minutes": 0
+      }
+     ],
+     "has_special_hours": false,
+     "closed": false
+    },
+    {
+     "day": 4,
+     "date": "2026-10-22",
+     "status": "open",
+     "hours": [
+      {
+       "start_hour": 8,
+       "start_minutes": 0,
+       "end_hour": 22,
+       "end_minutes": 0
+      }
+     ],
+     "has_special_hours": false,
+     "closed": false
+    },
+    {
+     "day": 5,
+     "date": "2026-10-23",
+     "status": "open",
+     "hours": [
+      {
+       "start_hour": 8,
+       "start_minutes": 0,
+       "end_hour": 21,
+       "end_minutes": 0
+      }
+     ],
+     "has_special_hours": false,
+     "closed": false
+    },
+    {
+     "day": 6,
+     "date": "2026-10-24",
+     "status": "open",
+     "hours": [
+      {
+       "start_hour": 8,
+       "start_minutes": 0,
+       "end_hour": 21,
+       "end_minutes": 0
+      }
+     ],
+     "has_special_hours": false,
+     "closed": false
+    }
+   ]
+  },
+  {
+   "id": "586d05e4ee596f6e6c04b527",
+   "name": "The Eatery at Stetson East",
+   "status": {
+    "label": "open",
+    "message": "Open. Closes at 10:00pm.",
+    "color": "green"
+   },
+   "week": [
+    {
+     "day": 0,
+     "date": "2026-10-18",
+     "status": "open",
+     "hours": [
+      {
+       "start_hour": 8,
+       "start_minutes": 0,
+       "end_hour": 22,
+       "end_minutes": 0
+      }
+     ],
+     "has_special_hours": false,
+     "closed": false
+    },
+    {
+     "day": 1,
+     "date": "2026-10-19",
+     "status": "open",
+     "hours": [
+      {
+       "start_hour": 7,
+       "start_minutes": 0,
+       "end_hour": 22,
+       "end_minutes": 0
+      }
+     ],
+     "has_special_hours": false,
+     "closed": false
+    },
+    {
+     "day": 2,
+     "date": "2026-10-20",
+     "status": "open",
+     "hours": [
+      {
+       "start_hour": 7,
+       "start_minutes": 0,
+       "end_hour": 22,
+       "end_minutes": 0
+      }
+     ],
+     "has_special_hours": false,
+     "closed": false
+    },
+    {
+     "day": 3,
+     "date": "2026-10-21",
+     "status": "open",
+     "hours": [
+      {
+       "start_hour": 7,
+       "start_minutes": 0,
+       "end_hour": 22,
+       "end_minutes": 0
+      }
+     ],
+     "has_special_hours": false,
+     "closed": false
+    },
+    {
+     "day": 4,
+     "date": "2026-10-22",
+     "status": "open",
+     "hours": [
+      {
+       "start_hour": 7,
+       "start_minutes": 0,
+       "end_hour": 22,
+       "end_minutes": 0
+      }
+     ],
+     "has_special_hours": false,
+     "closed": false
+    },
+    {
+     "day": 5,
+     "date": "2026-10-23",
+     "status": "open",
+     "hours": [
+      {
+       "start_hour": 7,
+       "start_minutes": 0,
+       "end_hour": 21,
+       "end_minutes": 0
+      }
+     ],
+     "has_special_hours": false,
+     "closed": false
+    },
+    {
+     "day": 6,
+     "date": "2026-10-24",
+     "status": "open",
+     "hours": [
+      {
+       "start_hour": 8,
+       "start_minutes": 0,
+       "end_hour": 21,
+       "end_minutes": 0
+      }
+     ],
+     "has_special_hours": false,
+     "closed": false
+    }
+   ]
+  },
+  {
+   "id": "686d10a81fea2d6aaeb9f733",
+   "name": "Campus Roots at 60 Belvidere",
+   "status": {
+    "label": "open",
+    "message": "Open, but closes in 57 minutes.",
+    "color": "green"
+   },
+   "week": [
+    {
+     "day": 0,
+     "date": "2026-10-18",
+     "status": "open",
+     "hours": [
+      {
+       "start_hour": 10,
+       "start_minutes": 0,
+       "end_hour": 14,
+       "end_minutes": 0
+      },
+      {
+       "start_hour": 16,
+       "start_minutes": 0,
+       "end_hour": 20,
+       "end_minutes": 0
+      }
+     ],
+     "has_special_hours": false,
+     "closed": false
+    },
+    {
+     "day": 1,
+     "date": "2026-10-19",
+     "status": "open",
+     "hours": [
+      {
+       "start_hour": 8,
+       "start_minutes": 0,
+       "end_hour": 10,
+       "end_minutes": 0
+      },
+      {
+       "start_hour": 16,
+       "start_minutes": 0,
+       "end_hour": 20,
+       "end_minutes": 0
+      }
+     ],
+     "has_special_hours": false,
+     "closed": false
+    },
+    {
+     "day": 2,
+     "date": "2026-10-20",
+     "status": "open",
+     "hours": [
+      {
+       "start_hour": 8,
+       "start_minutes": 0,
+       "end_hour": 10,
+       "end_minutes": 0
+      },
+      {
+       "start_hour": 16,
+       "start_minutes": 0,
+       "end_hour": 20,
+       "end_minutes": 0
+      }
+     ],
+     "has_special_hours": false,
+     "closed": false
+    },
+    {
+     "day": 3,
+     "date": "2026-10-21",
+     "status": "open",
+     "hours": [
+      {
+       "start_hour": 8,
+       "start_minutes": 0,
+       "end_hour": 10,
+       "end_minutes": 0
+      },
+      {
+       "start_hour": 16,
+       "start_minutes": 0,
+       "end_hour": 20,
+       "end_minutes": 0
+      }
+     ],
+     "has_special_hours": false,
+     "closed": false
+    },
+    {
+     "day": 4,
+     "date": "2026-10-22",
+     "status": "open",
+     "hours": [
+      {
+       "start_hour": 8,
+       "start_minutes": 0,
+       "end_hour": 10,
+       "end_minutes": 0
+      },
+      {
+       "start_hour": 16,
+       "start_minutes": 0,
+       "end_hour": 20,
+       "end_minutes": 0
+      }
+     ],
+     "has_special_hours": false,
+     "closed": false
+    },
+    {
+     "day": 5,
+     "date": "2026-10-23",
+     "status": "closed",
+     "hours": [],
+     "has_special_hours": false,
+     "closed": true
+    },
+    {
+     "day": 6,
+     "date": "2026-10-24",
+     "status": "closed",
+     "hours": [],
+     "has_special_hours": false,
+     "closed": true
+    }
+   ]
+  }
+ ]
+}

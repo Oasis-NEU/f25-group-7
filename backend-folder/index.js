@@ -42,10 +42,18 @@ const MEALS = {
   brunch:    'Brunch',
 };
 
-/** Today in Boston as YYYY-MM-DD, matching the date the scraper writes. */
-function today() {
-  return new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+/**
+ * Today in Boston as YYYY-MM-DD. Assembled from parts because the en-CA short
+ * date has changed shape between ICU releases.
+ */
+function today(date = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(date);
+  const get = type => parts.find(part => part.type === type).value;
+  return `${get('year')}-${get('month')}-${get('day')}`;
 }
+
 
 /**
  * How far back the fallback will reach when today has not been scraped.

@@ -62,9 +62,19 @@ export function getSupabase() {
   return client;
 }
 
-/** Today in Boston as YYYY-MM-DD, matching the date the scraper writes. */
-export function today() {
-  return new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+const bostonDate = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit',
+});
+
+/**
+ * Today in Boston as YYYY-MM-DD, matching the date the scraper writes.
+ * Assembled from parts because the en-CA short date has changed shape
+ * between ICU releases, and every stored row is keyed on this string.
+ */
+export function today(date = new Date()) {
+  const parts = bostonDate.formatToParts(date);
+  const get = type => parts.find(part => part.type === type)?.value;
+  return `${get('year')}-${get('month')}-${get('day')}`;
 }
 
 /**

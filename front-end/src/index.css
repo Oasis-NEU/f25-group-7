@@ -1,46 +1,282 @@
 @import 'tailwindcss';
-@theme {
-    --color-border: hsl(var(--border));
-    --color-text: hsl(var(--text));
-    --color-background: hsl(var(--background));
+
+/*
+ * Design tokens. NU Dining sits beside Resy and Beli: a near-black app by
+ * default (light on request), warm off-white type, grouped cards, one
+ * coral-red accent for actions and the current selection, and score badges
+ * coloured by how well a dish is ranked (the number always carries the
+ * meaning; colour only echoes it).
+ *
+ * Appearance: dark unless the visitor picks light. index.html sets
+ * data-theme before first paint from the saved choice, so there is no flash.
+ *
+ * Every text pairing meets WCAG AA (4.5:1) on the surface it sits on in both
+ * appearances; line-strong meets 3:1 for non-text UI.
+ */
+:root {
+  color-scheme: light;
+  --bg: #F4F4F5;
+  --surface: #FFFFFF;
+  --surface-2: #ECECEE;
+  --surface-3: #E2E2E5;
+  --ink: #141416;
+  --ink-muted: #55555C;
+  --ink-subtle: #64646C;
+  --line: #E2E2E5;
+  --line-strong: #8D8D94;
+  --card-line: #E6E6E9;
+
+  --brand: #D41F35;
+  --brand-ink: #FFFFFF;
+  --brand-soft: #FBE9EC;
+  --brand-text: #C01B30;
+
+  --score-high: #13803F;
+  --score-mid: #9A6A00;
+  --score-low: #C0262D;
+
+  --danger: #B00D25;
+  --danger-soft: #FBEAEC;
+  --open: #13803F;
+  --open-soft: #E6F4EA;
+  --warn: #A84B00;
+  --warn-soft: #FDF0E2;
+  --gold: #8A5A06;
+  --gold-soft: #FBF1DA;
+  --series-1: #2a78d6;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.05), 0 6px 16px -6px rgb(0 0 0 / 0.08);
+  --bar: rgb(244 244 245 / 0.86);
+  --scrim: rgb(0 0 0 / 0.4);
+
+  /* Legacy names kept so older screens still resolve. */
+  --plate: var(--brand);
+  --plate-ink: var(--brand-ink);
+  --plate-muted: var(--brand-soft);
+  --g1: var(--surface-2); --g2: var(--surface-3); --g3: var(--line); --g4: var(--line-strong); --g5: var(--line-strong);
+  --g6: var(--ink-subtle); --g7: var(--ink-muted); --g8: #2A2A2E; --g9: var(--ink);
 }
 
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0F0F10;
+  --surface: #1A1A1C;
+  --surface-2: #242427;
+  --surface-3: #2E2E32;
+  --ink: #F3F1ED;
+  --ink-muted: #ABA8A2;
+  --ink-subtle: #908D87;
+  --line: #2C2C30;
+  --line-strong: #6E6C68;
+  --card-line: #262629;
 
-/* change the colour inside this root to set the different colours for our website*/
+  --brand: #E0283C;
+  --brand-ink: #FFFFFF;
+  --brand-soft: #3A1A1E;
+  --brand-text: #FF6B76;
+
+  --score-high: #4CD38A;
+  --score-mid: #E8B54A;
+  --score-low: #FF7A7A;
+
+  --danger: #FF8792;
+  --danger-soft: #3A1519;
+  --open: #4CD38A;
+  --open-soft: #10291B;
+  --warn: #FFB340;
+  --warn-soft: #33240C;
+  --gold: #E8B64C;
+  --gold-soft: #33280F;
+  --series-1: #3987e5;
+  --shadow: none;
+  --bar: rgb(15 15 16 / 0.86);
+  --scrim: rgb(0 0 0 / 0.6);
+  --g8: #D9D6D0;
+}
+
+@theme inline {
+  --color-g1: var(--g1);
+  --color-g2: var(--g2);
+  --color-g3: var(--g3);
+  --color-g4: var(--g4);
+  --color-g5: var(--g5);
+  --color-g6: var(--g6);
+  --color-g7: var(--g7);
+  --color-g8: var(--g8);
+  --color-g9: var(--g9);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-score-high: var(--score-high);
+  --color-score-mid: var(--score-mid);
+  --color-score-low: var(--score-low);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-subtle: var(--ink-subtle);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-card-line: var(--card-line);
+  --color-brand: var(--brand);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-text: var(--brand-text);
+  --color-plate: var(--plate);
+  --color-plate-ink: var(--plate-ink);
+  --color-plate-muted: var(--plate-muted);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-open: var(--open);
+  --color-open-soft: var(--open-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-series-1: var(--series-1);
+  --color-bar: var(--bar);
+  --shadow-card: var(--shadow);
+
+  /* The system font: SF on Apple devices, Segoe UI on Windows, Roboto on Android. */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  /*
+   * Apple's type scale, in rem so it follows the reader's text-size setting:
+   * caption 13, subhead 15, body 17, title 3 20, title 2 22, title 32, hero 48.
+   */
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.4;
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: 1.45;
+  --text-base: 1.0625rem;
+  --text-base--line-height: 1.5;
+  --text-lg: 1.25rem;
+  --text-lg--line-height: 1.35;
+  --text-xl: 1.375rem;
+  --text-xl--line-height: 1.3;
+  --text-title: 2rem;
+  --text-title--line-height: 1.15;
+  --text-hero: 3rem;
+  --text-hero--line-height: 1.08;
+
+  --radius-2xl: 14px;
+  --radius-card: 18px;
+  --ease-apple: cubic-bezier(0.25, 0.1, 0.25, 1);
+  /*
+   * Springs, after Material 3 Expressive's spring motion, written as CSS
+   * linear() curves. Gentle: sheets settling (2% overshoot). Lively: the one
+   * celebratory moment, a ranking's score landing (about 10% overshoot).
+   */
+  --ease-spring: linear(0, 0.016, 0.063 2.4%, 0.233 5%, 0.453 7.9%, 0.672 11.3%, 0.84 15.1%, 0.946 19.4%, 1.002 24.1%, 1.02 29.5%, 1.016 36%, 1.004 45%, 1);
+  --ease-spring-lively: linear(0, 0.03, 0.12 3%, 0.42 8%, 0.79 13%, 1.03 18%, 1.1 22%, 1.09 26%, 1.03 32%, 0.99 38%, 0.985 44%, 1 56%, 1);
+}
 
 @layer base {
-     :root {
-        --background: 210 40% 98%;
-        --color-text: 250 47% 60%;
-        --border: 217 33% 20%;
-    }
-    html {
-        scroll-behavior: smooth;
-    }
-    body {
-        background-color: var(--color-background);
-        color: var(--color-text);
-        transition: colors 0.3s;
-    }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    background-color: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  /* A visible focus ring on everything keyboard-reachable, never removed. */
+  :focus-visible {
+    outline: 2px solid var(--brand-text);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background-color: var(--brand);
+    color: var(--brand-ink);
+  }
+  html {
+    caret-color: var(--brand);
+    accent-color: var(--brand);
+    scrollbar-color: var(--line-strong) transparent;
+  }
+  a {
+    text-underline-offset: 0.2em;
+    text-decoration-thickness: 1px;
+  }
+  h1, h2, h3 {
+    text-wrap: balance;
+    letter-spacing: -0.02em;
+  }
+  p { text-wrap: pretty; }
+  button, [role="button"], a, summary, select, label[for] {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  button:not(:disabled), [role="button"], summary, select {
+    cursor: pointer;
+  }
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to   { opacity: 1; transform: translateY(0); }
+@layer utilities {
+  .tabular { font-variant-numeric: tabular-nums; }
+  .scrollbar-none { scrollbar-width: none; }
+  .scrollbar-none::-webkit-scrollbar { display: none; }
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+  /* Translucent material for the functional layer (header, tab bar) only. */
+  .material-bar {
+    background-color: var(--bar);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+  }
 }
 
-@layer components {
-    .container {
-        margin-inline: auto;
-        padding-inline: 2rem;
-    }
-    .card-hover {
-        transform: scale(1.02);
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-    }
-    .gradient-border {
-        background: linear-gradient(to right, hsl(var(--card)), hsl(var(--card)));
-        background-clip: padding-box;
-        border: 1px solid transparent;
-    }
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-skeleton { animation: skeleton-pulse 1.4s ease-in-out infinite; }
+@keyframes fade-in {
+  from { opacity: 0.001; }
+  to { opacity: 1; }
+}
+.animate-rise { animation: fade-up 300ms var(--ease-apple) both; }
+@keyframes sheet-up {
+  from { transform: translateY(40px); opacity: 0.001; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes pop-in {
+  from { transform: scale(0.6); opacity: 0.001; }
+  to { transform: scale(1); opacity: 1; }
+}
+@keyframes step-in {
+  from { transform: translateX(24px); opacity: 0.001; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.animate-sheet { animation: sheet-up 420ms var(--ease-spring) both; }
+.animate-pop { animation: pop-in 560ms var(--ease-spring-lively) both; }
+.animate-step { animation: step-in 320ms var(--ease-spring) both; }
+/* New content (another hall, day or meal) settles in; a background refresh of
+   the same menu keeps its element and does not replay this. */
+.animate-fade { animation: fade-in 220ms var(--ease-apple) both; }
+.animate-page { animation: fade-up 400ms var(--ease-apple) both; }
+
+/* People who ask for less motion or less transparency get exactly that. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .material-bar {
+    background-color: var(--bg);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+@media (prefers-contrast: more) {
+  :root { --card-line: var(--line-strong); --ink-muted: var(--ink); }
 }

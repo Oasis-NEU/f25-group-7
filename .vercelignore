@@ -1,0 +1,14 @@
+# Uploaded by `vercel deploy` from a local checkout: keep secrets and
+# anything the front-end build doesn't need off Vercel.
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+node_modules
+**/node_modules
+backend-folder
+.impeccable
+.firebase
+*.log

@@ -1,0 +1,1225 @@
+{
+ "status": "success",
+ "request_time": 0.368641645,
+ "records": 0,
+ "allergen_filter": true,
+ "menu": {
+  "id": "1",
+  "date": "2026-10-18",
+  "name": null,
+  "from_date": null,
+  "to_date": null,
+  "periods": {
+   "name": "Breakfast",
+   "sort_order": 0,
+   "id": "6ad4fb329314eae752bf01a2",
+   "categories": [
+    {
+     "id": "6ad4fb329314eae752bf0188",
+     "name": "CUCINA",
+     "sort_order": 0,
+     "items": [
+      {
+       "id": "6ad4f0a189b03e7af70d098c",
+       "name": "Vegetarian Baked Beans",
+       "mrn_full": "68531.0",
+       "desc": "",
+       "webtrition_id": 1302520178,
+       "sort_order": 1,
+       "portion": "1 ladle-6oz",
+       "qty": null,
+       "ingredients": "Reduced Sodium Baked Beans^",
+       "mrn": "68531",
+       "rev": "0",
+       "calories": 210,
+       "nutrients": [
+        {
+         "id": "",
+         "name": "Calories",
+         "value": "210",
+         "uom": "kcal",
+         "value_numeric": "210"
+        },
+        {
+         "id": "",
+         "name": "Protein (g)",
+         "value": "7",
+         "uom": "g",
+         "value_numeric": "7"
+        },
+        {
+         "id": "",
+         "name": "Total Carbohydrates (g)",
+         "value": "42",
+         "uom": "g",
+         "value_numeric": "42"
+        },
+        {
+         "id": "",
+         "name": "Sugar (g)",
+         "value": "17",
+         "uom": "g",
+         "value_numeric": "17"
+        },
+        {
+         "id": "",
+         "name": "Total Fat (g)",
+         "value": "0.5",
+         "uom": "g",
+         "value_numeric": "0.5"
+        },
+        {
+         "id": "",
+         "name": "Saturated Fat",
+         "value": "0",
+         "uom": "g",
+         "value_numeric": "0"
+        },
+        {
+         "id": "",
+         "name": "Cholesterol (mg)",
+         "value": "0",
+         "uom": "mg",
+         "value_numeric": "0"
+        },
+        {
+         "id": "",
+         "name": "Dietary Fiber (g)",
+         "value": "10",
+         "uom": "g",
+         "value_numeric": "10"
+        },
+        {
+         "id": "",
+         "name": "Sodium (mg)",
+         "value": "520",
+         "uom": "mg",
+         "value_numeric": "520"
+        },
+        {
+         "id": "",
+         "name": "Potassium (mg)",
+         "value": "520",
+         "uom": "mg",
+         "value_numeric": "520"
+        },
+        {
+         "id": "",
+         "name": "Calcium (mg)",
+         "value": "70",
+         "uom": "mg",
+         "value_numeric": "70"
+        },
+        {
+         "id": "",
+         "name": "Iron (mg)",
+         "value": "2.5",
+         "uom": "mg",
+         "value_numeric": "2.5"
+        },
+        {
+         "id": "",
+         "name": "Trans Fat",
+         "value": "0",
+         "uom": "g",
+         "value_numeric": "0"
+        },
+        {
+         "id": "",
+         "name": "Vitamin D (IU)",
+         "value": "0",
+         "uom": "IU",
+         "value_numeric": "0"
+        },
+        {
+         "id": "",
+         "name": "Vitamin C (mg)",
+         "value": "0",
+         "uom": "mg",
+         "value_numeric": "0"
+        },
+        {
+         "id": "",
+         "name": "Calories From Fat",
+         "value": "5",
+         "uom": "kcal",
+         "value_numeric": "5"
+        },
+        {
+         "id": "",
+         "name": "Vitamin A (RE)",
+         "value": "0",
+         "uom": "RE",
+         "value_numeric": "0"
+        }
+       ],
+       "filters": [
+        {
+         "id": "",
+         "name": "Celery*",
+         "type": "allergen",
+         "icon": false,
+         "remote_file_name": null,
+         "sector_icon_id": null,
+         "custom_icons": null
+        },
+        {
+         "id": "",
+         "name": "Garlic",
+         "type": "allergen",
+         "icon": false,
+         "remote_file_name": null,
+         "sector_icon_id": null,
+         "custom_icons": null
+        },
+        {
+         "id": "",
+         "name": "Mustard",
+         "type": "allergen",
+         "icon": false,
+         "remote_file_name": null,
+         "sector_icon_id": null,
+         "custom_icons": null
+        },
+        {
+         "id": "",
+         "name": "Onion",
+         "type": "allergen",
+         "icon": false,
+         "remote_file_name": null,
+         "sector_icon_id": null,
+         "custom_icons": null
+        },
+        {
+         "id": "",
+         "name": "Vegetarian",
+         "type": "label",
+         "icon": true,
+         "remote_file_name": null,
+         "sector_icon_id": null,
+         "custom_icons": null
+        },
+        {
+         "id": "",
+         "name": "Good Source of Protein",
+         "type": "label",
+         "icon": true,
+         "remote_file_name": null,
+         "sector_icon_id": null,
+         "custom_icons": null
+        },
+        {
+         "id": "",
+         "name": "Avoiding Gluten",
+         "type": "label",
+         "icon": true,
+         "remote_file_name": null,
+         "sector_icon_id": null,
+         "custom_icons": null
+        }
+       ],
+       "custom_allergens": null
+      },
+      {
+       "id": "6ad4f0a189b03e7af70d094c",
+       "name": "Meatless Vegetarian Sausage Patty",
+       "mrn_full": "69553.0",
+       "desc": "",
+       "webtrition_id": 1302520133,
+       "sort_order": 2,
+       "portion": "1 each",
+       "qty": null,
+       "ingredients": "Meatless Sausage^",
+       "mrn": "69553",
+       "rev": "0",
+       "calories": 70,
+       "nutrients": [
+        {
+         "id": "",
+         "name": "Calories",
+         "value": "70",
+         "uom": "kcal",
+         "value_numeric": "70"
+        },
+        {
+         "id": "",
+         "name": "Protein (g)",
+         "value": "9",
+         "uom": "g",
+         "value_numeric": "9"
+        },
+        {
+         "id": "",
+         "name": "Total Carbohydrates (g)",
+         "value": "4",
+         "uom": "g",
+         "value_numeric": "4"
+        },
+        {
+         "id": "",
+         "name": "Sugar (g)",
+         "value": "less than 1 gram",
+         "uom": "g",
+         "value_numeric": "1"
+        },
+        {
+         "id": "",
+         "name": "Total Fat (g)",
+         "value": "2.5",
+         "uom": "g",
+         "value_numeric": "2.5"
+        },
+        {
+         "id": "",
+         "name": "Saturated Fat",
+         "value": "0",
+         "uom": "g",
+         "value_numeric": "0"
+        },
+        {
+         "id": "",
+         "name": "Cholesterol (mg)",
+         "value": "0",
+         "uom": "mg",
+         "value_numeric": "0"
+        },
+        {
+         "id": "",
+         "name": "Dietary Fiber (g)",
+         "value": "less than 1 gram",
+         "uom": "g",
+         "value_numeric": "1"
+        },
+        {
+         "id": "",
+         "name": "Sodium (mg)",
+         "value": "250",
+         "uom": "mg",
+         "value_numeric": "250"
+        },
+        {
+         "id": "",
+         "name": "Potassium (mg)",
+         "value": "100",
+         "uom": "mg",
+         "value_numeric": "100"
+        },
+        {
+         "id": "",
+         "name": "Calcium (mg)",
+         "value": "20",
+         "uom": "mg",
+         "value_numeric": "20"
+        },
+        {
+         "id": "",
+         "name": "Iron (mg)",
+         "value": "1.6",
+         "uom": "mg",
+         "value_numeric": "1.6"
+        },
+        {
+         "id": "",
+         "name": "Trans Fat",
+         "value": "0",
+         "uom": "g",
+         "value_numeric": "0"
+        },
+        {
+         "id": "",
+         "name": "Vitamin D (IU)",
+         "value": "0",
+         "uom": "IU",
+         "value_numeric": "0"
+        },
+        {
+         "id": "",
+         "name": "Vitamin C (mg)",
+         "value": "0",
+         "uom": "mg",
+         "value_numeric": "0"
+        },
+        {
+         "id": "",
+         "name": "Calories From Fat",
+         "value": "20",
+         "uom": "kcal",
+         "value_numeric": "20"
+        },
+        {
+         "id": "",
+         "name": "Vitamin A (RE)",
+         "value": "0",
+         "uom": "RE",
+         "value_numeric": "0"
+        }
+       ],
+       "filters": [
+        {
+         "id": "",
+         "name": "Celery*",
+         "type": "allergen",
+         "icon": false,
+         "remote_file_name": null,
+         "sector_icon_id": null,
+         "custom_icons": null
+        },
+        {
+         "id": "",
+         "name": "Egg",
+         "type": "allergen",
+         "icon": false,
+         "remote_file_name": null,
+         "sector_icon_id": null,
+         "custom_icons": null
+        },
+        {
+         "id": "",
+         "name": "Gluten",
+         "type": "allergen",
+         "icon": false,
+         "remote_file_name": null,
+         "sector_icon_id": null,
+         "custom_icons": null
+        },
+        {
+         "id": "",
+         "name": "Milk",
+         "type": "allergen",
+         "icon": false,
+         "remote_file_name": null,
+         "sector_icon_id": null,
+         "custom_icons": null
+        },
+        {
+         "id": "",
+         "name": "MSG*",
+         "type": "allergen",
+         "icon": false,
+         "remote_file_name": null,
+         "sector_icon_id": null,
+         "custom_icons": null
+        },
+        {
+         "id": "",
+         "name": "Mustard*",
+         "type": "allergen",
+         "icon": false,
+         "remote_file_name": null,
+         "sector_icon_id": null,
+         "custom_icons": null
+        },
+        {
+         "id": "",
+         "name": "Onion",
+         "type": "allergen",
+         "icon": false,
+         "remote_file_name": null,
+         "sector_icon_id": null,
+         "custom_icons": null
+        },
+        {
+         "id": "",
+         "name": "Soy",
+         "type": "allergen",
+         "icon": false,
+         "remote_file_name": null,
+         "sector_icon_id": null,
+         "custom_icons": null
+        },
+        {
+         "id": "",
+         "name": "Wheat",
+         "type": "allergen",
+         "icon": false,
+         "remote_file_name": null,
+         "sector_icon_id": null,
+         "custom_icons": null
+        },
+        {
+         "id": "",
+         "name": "Vegetarian",
+         "type": "label",
+         "icon": true,
+         "remote_file_name": null,
+         "sector_icon_id": null,
+         "custom_icons": null
+        },
+        {
+         "id": "",
+         "name": "Good Source of Protein",
+         "type": "label",
+         "icon": true,
+         "remote_file_name": null,
+         "sector_icon_id": null,
+         "custom_icons": null
+        }
+       ],
+       "custom_allergens": null
+      }
+     ]
+    },
+    {
+     "id": "6ad4fb329314eae752bf0189",
+     "name": "RICE STATION",
+     "sort_order": 1,
+     "items": [
+      {
+       "id": "6ad4f0a189b03e7af70d0b6b",
+       "name": "White Rice",
+       "mrn_full": "103814.0",
+       "desc": "White Rice Cooked with Canola Oil and Salt",
+       "webtrition_id": 1350911968,
+       "sort_order": 1,
+       "portion": "1/2 cup",
+       "qty": null,
+       "ingredients": "Water, Long Grain White Rice, Salt",
+       "mrn": "103814",
+       "rev": "0",
+       "calories": 110,
+       "nutrients": [
+        {
+         "id": "",
+         "name": "Calories",
+         "value": "110",
+         "uom": "kcal",
+         "value_numeric": "110"
+        },
+        {
+         "id": "",
+         "name": "Protein (g)",
+         "value": "2",
+         "uom": "g",
+         "value_numeric": "2"
+        },
+        {
+         "id": "",
+         "name": "Total Carbohydrates (g)",
+         "value": "24",
+         "uom": "g",
+         "value_numeric": "24"
+        },
+        {
+         "id": "",
+         "name": "Sugar (g)",
+         "value": "0",
+         "uom": "g",
+         "value_numeric": "0"
+        },
+        {
+         "id": "",
+         "name": "Total Fat (g)",
+         "value": "0",
+         "uom": "g",
+         "value_numeric": "0"
+        },
+        {
+         "id": "",
+         "name": "Saturated Fat",
+         "value": "0",
+         "uom": "g",
+         "value_numeric": "0"
+        },
+        {
+         "id": "",
+         "name": "Cholesterol (mg)",
+         "value": "0",
+         "uom": "mg",
+         "value_numeric": "0"
+        },
+        {
+         "id": "",
+         "name": "Dietary Fiber (g)",
+         "value": "less than 1 gram",
+         "uom": "g",
+         "value_numeric": "1"
+        },
+        {
+         "id": "",
+         "name": "Sodium (mg)",
+         "value": "140",
+         "uom": "mg",
+         "value_numeric": "140"
+        },
+        {
+         "id": "",
+         "name": "Potassium (mg)",
+         "value": "50",
+         "uom": "mg",
+         "value_numeric": "50"
+        },
+        {
+         "id": "",
+         "name": "Calcium (mg)",
+         "value": "20",
+         "uom": "mg",
+         "value_numeric": "20"
+        },
+        {
+         "id": "",
+         "name": "Iron (mg)",
+         "value": "1",
+         "uom": "mg",
+         "value_numeric": "1"
+        },
+        {
+         "id": "",
+         "name": "Trans Fat",
+         "value": "-",
+         "uom": "g",
+         "value_numeric": "-"
+        },
+        {
+         "id": "",
+         "name": "Vitamin D (IU)",
+         "value": "0",
+         "uom": "IU",
+         "value_numeric": "0"
+        },
+        {
+         "id": "",
+         "name": "Vitamin C (mg)",
+         "value": "0",
+         "uom": "mg",
+         "value_numeric": "0"
+        },
+        {
+         "id": "",
+         "name": "Calories From Fat",
+         "value": "0",
+         "uom": "kcal",
+         "value_numeric": "0"
+        },
+        {
+         "id": "",
+         "name": "Vitamin A (RE)",
+         "value": "0+",
+         "uom": "RE",
+         "value_numeric": "0+"
+        }
+       ],
+       "filters": [
+        {
+         "id": "",
+         "name": "Vegan",
+         "type": "label",
+         "icon": true,
+         "remote_file_name": null,
+         "sector_icon_id": null,
+         "custom_icons": null
+        },
+        {
+         "id": "",
+         "name": "Vegetarian",
+         "type": "label",
+         "icon": true,
+         "remote_file_name": null,
+         "sector_icon_id": null,
+         "custom_icons": null
+        },
+        {
+         "id": "",
+         "name": "How Good Friendly",
+         "type": "label",
+         "icon": true,
+         "remote_file_name": null,
+         "sector_icon_id": null,
+         "custom_icons": null
+        },
+        {
+         "id": "",
+         "name": "Avoiding Gluten",
+         "type": "label",
+         "icon": true,
+         "remote_file_name": null,
+         "sector_icon_id": null,
+         "custom_icons": null
+        },
+        {
+         "id": "",
+         "name": "Jain",
+         "type": "label",
+         "icon": true,
+         "remote_file_name": null,
+         "sector_icon_id": null,
+         "custom_icons": null
+        }
+       ],
+       "custom_allergens": null
+      },
+      {
+       "id": "6ad4f0a189b03e7af70d0b8e",
+       "name": "Olive Oil",
+       "mrn_full": "47805.1",
+       "desc": "",
+       "webtrition_id": 1350911975,
+       "sort_order": 3,
+       "portion": "1 floz",
+       "qty": null,
+       "ingredients": "Olive Oil",
+       "mrn": "47805",
+       "rev": "1",
+       "calories": 240,
+       "nutrients": [
+        {
+         "id": "",
+         "name": "Calories",
+         "value": "240",
+         "uom": "kcal",
+         "value_numeric": "240"
+        },
+        {
+         "id": "",
+         "name": "Protein (g)",
+         "value": "0",
+         "uom": "g",
+         "value_numeric": "0"
+        },
+        {
+         "id": "",
+         "name": "Total Carbohydrates (g)",
+         "value": "0",
+         "uom": "g",
+         "value_numeric": "0"
+        },
+        {
+         "id": "",
+         "name": "Sugar (g)",
+         "value": "0",
+         "uom": "g",
+         "value_numeric": "0"
+        },
+        {
+         "id": "",
+         "name": "Total Fat (g)",
+         "value": "27",
+         "uom": "g",
+         "value_numeric": "27"
+        },
+        {
+         "id": "",
+         "name": "Saturated Fat",
+         "value": "3.5",
+         "uom": "g",
+         "value_numeric": "3.5"
+        },
+        {
+         "id": "",
+         "name": "Cholesterol (mg)",
+         "value": "0",
+         "uom": "mg",
+         "value_numeric": "0"
+        },
+        {
+         "id": "",
+         "name": "Dietary Fiber (g)",
+         "value": "0",
+         "uom": "g",
+         "value_numeric": "0"
+        },
+        {
+         "id": "",
+         "name": "Sodium (mg)",
+         "value": "0",
+         "uom": "mg",
+         "value_numeric": "0"
+        },
+        {
+         "id": "",
+         "name": "Potassium (mg)",
+         "value": "0",
+         "uom": "mg",
+         "value_numeric": "0"
+        },
+        {
+         "id": "",
+         "name": "Calcium (mg)",
+         "value": "0",
+         "uom": "mg",
+         "value_numeric": "0"
+        },
+        {
+         "id": "",
+         "name": "Iron (mg)",
+         "value": "0.2",
+         "uom": "mg",
+         "value_numeric": "0.2"
+        },
+        {
+         "id": "",
+         "name": "Trans Fat",
+         "value": "-",
+         "uom": "g",
+         "value_numeric": "-"
+        },
+        {
+         "id": "",
+         "name": "Vitamin D (IU)",
+         "value": "0",
+         "uom": "IU",
+         "value_numeric": "0"
+        },
+        {
+         "id": "",
+         "name": "Vitamin C (mg)",
+         "value": "0",
+         "uom": "mg",
+         "value_numeric": "0"
+        },
+        {
+         "id": "",
+         "name": "Calories From Fat",
+         "value": "240",
+         "uom": "kcal",
+         "value_numeric": "240"
+        },
+        {
+         "id": "",
+         "name": "Vitamin A (RE)",
+         "value": "-",
+         "uom": "RE",
+         "value_numeric": "-"
+        }
+       ],
+       "filters": [
+        {
+         "id": "",
+         "name": "Vegan",
+         "type": "label",
+         "icon": true,
+         "remote_file_name": null,
+         "sector_icon_id": null,
+         "custom_icons": null
+        },
+        {
+         "id": "",
+         "name": "Vegetarian",
+         "type": "label",
+         "icon": true,
+         "remote_file_name": null,
+         "sector_icon_id": null,
+         "custom_icons": null
+        },
+        {
+         "id": "",
+         "name": "Avoiding Gluten",
+         "type": "label",
+         "icon": true,
+         "remote_file_name": null,
+         "sector_icon_id": null,
+         "custom_icons": null
+        }
+       ],
+       "custom_allergens": null
+      }
+     ]
+    },
+    {
+     "id": "6ad4fb329314eae752bf018a",
+     "name": "HOMESTYLE",
+     "sort_order": 2,
+     "items": [
+      {
+       "id": "6ad4f0a189b03e7af70d08eb",
+       "name": "Scrambled Eggs",
+       "mrn_full": "2032.23",
+       "desc": "",
+       "webtrition_id": 1291872653,
+       "sort_order": 1,
+       "portion": "1/2 cup",
+       "qty": null,
+       "ingredients": "Liquid Egg^, Canola Oil",
+       "mrn": "2032",
+       "rev": "23",
+       "calories": 210,
+       "nutrients": [
+        {
+         "id": "",
+         "name": "Calories",
+         "value": "210",
+         "uom": "kcal",
+         "value_numeric": "210"
+        },
+        {
+         "id": "",
+         "name": "Protein (g)",
+         "value": "14",
+         "uom": "g",
+         "value_numeric": "14"
+        },
+        {
+         "id": "",
+         "name": "Total Carbohydrates (g)",
+         "value": "1",
+         "uom": "g",
+         "value_numeric": "1"
+        },
+        {
+         "id": "",
+         "name": "Sugar (g)",
+         "value": "0",
+         "uom": "g",
+         "value_numeric": "0"
+        },
+        {
+         "id": "",
+         "name": "Total Fat (g)",
+         "value": "16",
+         "uom": "g",
+         "value_numeric": "16"
+        },
+        {
+         "id": "",
+         "name": "Saturated Fat",
+         "value": "4",
+         "uom": "g",
+         "value_numeric": "4"
+        },
+        {
+         "id": "",
+         "name": "Cholesterol (mg)",
+         "value": "420",
+         "uom": "mg",
+         "value_numeric": "420"
+        },
+        {
+         "id": "",
+         "name": "Dietary Fiber (g)",
+         "value": "0",
+         "uom": "g",
+         "value_numeric": "0"
+        },
+        {
+         "id": "",
+         "name": "Sodium (mg)",
+         "value": "150",
+         "uom": "mg",
+         "value_numeric": "150"
+        },
+        {
+         "id": "",
+         "name": "Potassium (mg)",
+         "value": "150",
+         "uom": "mg",
+         "value_numeric": "150"
+        },
+        {
+         "id": "",
+         "name": "Calcium (mg)",
+         "value": "70",
+         "uom": "mg",
+         "value_numeric": "70"
+        },
+        {
+         "id": "",
+         "name": "Iron (mg)",
+         "value": "2",
+         "uom": "mg",
+         "value_numeric": "2"
+        },
+        {
+         "id": "",
+         "name": "Trans Fat",
+         "value": "0",
+         "uom": "g",
+         "value_numeric": "0"
+        },
+        {
+         "id": "",
+         "name": "Vitamin D (IU)",
+         "value": "120",
+         "uom": "IU",
+         "value_numeric": "120"
+        },
+        {
+         "id": "",
+         "name": "Vitamin C (mg)",
+         "value": "0",
+         "uom": "mg",
+         "value_numeric": "0"
+        },
+        {
+         "id": "",
+         "name": "Calories From Fat",
+         "value": "140",
+         "uom": "kcal",
+         "value_numeric": "140"
+        },
+        {
+         "id": "",
+         "name": "Vitamin A (RE)",
+         "value": "-",
+         "uom": "RE",
+         "value_numeric": "-"
+        }
+       ],
+       "filters": [
+        {
+         "id": "",
+         "name": "Egg",
+         "type": "allergen",
+         "icon": false,
+         "remote_file_name": null,
+         "sector_icon_id": null,
+         "custom_icons": null
+        },
+        {
+         "id": "",
+         "name": "Vegetarian",
+         "type": "label",
+         "icon": true,
+         "remote_file_name": null,
+         "sector_icon_id": null,
+         "custom_icons": null
+        },
+        {
+         "id": "",
+         "name": "Good Source of Protein",
+         "type": "label",
+         "icon": true,
+         "remote_file_name": null,
+         "sector_icon_id": null,
+         "custom_icons": null
+        },
+        {
+         "id": "",
+         "name": "Avoiding Gluten",
+         "type": "label",
+         "icon": true,
+         "remote_file_name": null,
+         "sector_icon_id": null,
+         "custom_icons": null
+        }
+       ],
+       "custom_allergens": null
+      },
+      {
+       "id": "6ad4f0a189b03e7af70d0be6",
+       "name": "Pork Sausage Link",
+       "mrn_full": "122864.0",
+       "desc": "",
+       "webtrition_id": 1363991216,
+       "sort_order": 2,
+       "portion": "2 each",
+       "qty": null,
+       "ingredients": "Pork Sausage^",
+       "mrn": "122864",
+       "rev": "0",
+       "calories": 200,
+       "nutrients": [
+        {
+         "id": "",
+         "name": "Calories",
+         "value": "200",
+         "uom": "kcal",
+         "value_numeric": "200"
+        },
+        {
+         "id": "",
+         "name": "Protein (g)",
+         "value": "7",
+         "uom": "g",
+         "value_numeric": "7"
+        },
+        {
+         "id": "",
+         "name": "Total Carbohydrates (g)",
+         "value": "0",
+         "uom": "g",
+         "value_numeric": "0"
+        },
+        {
+         "id": "",
+         "name": "Sugar (g)",
+         "value": "0",
+         "uom": "g",
+         "value_numeric": "0"
+        },
+        {
+         "id": "",
+         "name": "Total Fat (g)",
+         "value": "19",
+         "uom": "g",
+         "value_numeric": "19"
+        },
+        {
+         "id": "",
+         "name": "Saturated Fat",
+         "value": "6",
+         "uom": "g",
+         "value_numeric": "6"
+        },
+        {
+         "id": "",
+         "name": "Cholesterol (mg)",
+         "value": "35",
+         "uom": "mg",
+         "value_numeric": "35"
+        },
+        {
+         "id": "",
+         "name": "Dietary Fiber (g)",
+         "value": "0",
+         "uom": "g",
+         "value_numeric": "0"
+        },
+        {
+         "id": "",
+         "name": "Sodium (mg)",
+         "value": "450",
+         "uom": "mg",
+         "value_numeric": "450"
+        },
+        {
+         "id": "",
+         "name": "Potassium (mg)",
+         "value": "100",
+         "uom": "mg",
+         "value_numeric": "100"
+        },
+        {
+         "id": "",
+         "name": "Calcium (mg)",
+         "value": "10",
+         "uom": "mg",
+         "value_numeric": "10"
+        },
+        {
+         "id": "",
+         "name": "Iron (mg)",
+         "value": "0.4",
+         "uom": "mg",
+         "value_numeric": "0.4"
+        },
+        {
+         "id": "",
+         "name": "Trans Fat",
+         "value": "0",
+         "uom": "g",
+         "value_numeric": "0"
+        },
+        {
+         "id": "",
+         "name": "Vitamin D (IU)",
+         "value": "20",
+         "uom": "IU",
+         "value_numeric": "20"
+        },
+        {
+         "id": "",
+         "name": "Vitamin C (mg)",
+         "value": "0",
+         "uom": "mg",
+         "value_numeric": "0"
+        },
+        {
+         "id": "",
+         "name": "Calories From Fat",
+         "value": "170",
+         "uom": "kcal",
+         "value_numeric": "170"
+        },
+        {
+         "id": "",
+         "name": "Vitamin A (RE)",
+         "value": "-",
+         "uom": "RE",
+         "value_numeric": "-"
+        }
+       ],
+       "filters": [
+        {
+         "id": "",
+         "name": "Beef*",
+         "type": "allergen",
+         "icon": false,
+         "remote_file_name": null,
+         "sector_icon_id": null,
+         "custom_icons": null
+        },
+        {
+         "id": "",
+         "name": "Celery*",
+         "type": "allergen",
+         "icon": false,
+         "remote_file_name": null,
+         "sector_icon_id": null,
+         "custom_icons": null
+        },
+        {
+         "id": "",
+         "name": "Milk*",
+         "type": "allergen",
+         "icon": false,
+         "remote_file_name": null,
+         "sector_icon_id": null,
+         "custom_icons": null
+        },
+        {
+         "id": "",
+         "name": "Mustard*",
+         "type": "allergen",
+         "icon": false,
+         "remote_file_name": null,
+         "sector_icon_id": null,
+         "custom_icons": null
+        },
+        {
+         "id": "",
+         "name": "Pork",
+         "type": "allergen",
+         "icon": false,
+         "remote_file_name": null,
+         "sector_icon_id": null,
+         "custom_icons": null
+        },
+        {
+         "id": "",
+         "name": "Good Source of Protein",
+         "type": "label",
+         "icon": true,
+         "remote_file_name": null,
+         "sector_icon_id": null,
+         "custom_icons": null
+        },
+        {
+         "id": "",
+         "name": "Avoiding Gluten",
+         "type": "label",
+         "icon": true,
+         "remote_file_name": null,
+         "sector_icon_id": null,
+         "custom_icons": null
+        }
+       ],
+       "custom_allergens": null
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "periods": [
+  {
+   "id": "6ad4fb329314eae752bf01a2",
+   "sort_order": 0,
+   "name": "Breakfast"
+  },
+  {
+   "id": "6ad4fb329314eae752bf01a1",
+   "sort_order": 1,
+   "name": "Lunch"
+  },
+  {
+   "id": "6ad4fb329314eae752bf01a3",
+   "sort_order": 2,
+   "name": "Dinner"
+  },
+  {
+   "id": "6ad4fb329314eae752bf01a4",
+   "sort_order": 3,
+   "name": "Everyday"
+  }
+ ],
+ "closed": false
+}
