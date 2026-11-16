@@ -140,7 +140,7 @@ function HallColumn({ hall, now }) {
           <Link to={target ? menuLink : tomorrowLink} className="inline-flex min-h-12 items-center gap-1 text-sm font-semibold text-brand-text hover:underline">
             {target ? (meal ? `Full ${meal.toLowerCase()} menu` : 'Menus') : 'Tomorrow’s menu'} <ChevronRight className="size-4" aria-hidden="true" />
           </Link>
-          <DirectionsLink hall={hallBySlug(hall.slug) ?? hall} className="-mr-2.5" />
+          <DirectionsLink hall={hallBySlug(hall.slug) ?? hall} />
         </div>
       </section>
     </MenuContext.Provider>

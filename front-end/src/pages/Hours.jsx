@@ -103,7 +103,7 @@ export default function Hours() {
                 <Link to={`/menu/${hall.slug}`} className="hover:underline">{hall.name}</Link>
               </h2>
               <StatusText status={describeStatus(hall.days, now)} className="text-sm" />
-              <DirectionsLink hall={hallBySlug(hall.slug) ?? hall} className="-ml-2.5 mt-1 flex" />
+              <DirectionsLink hall={hallBySlug(hall.slug) ?? hall} className="mt-1" />
             </div>
             <dl className="border-t border-line text-sm tabular">
               {hall.days.map((day, i) => (
