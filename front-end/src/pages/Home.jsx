@@ -136,11 +136,11 @@ function HallColumn({ hall, now }) {
           <p className="border-t border-line px-4 py-4 text-sm text-ink-muted">{target ? hall.description : 'No more meals today.'}</p>
         )}
 
-        <div className="mt-auto flex items-center justify-between gap-3 border-t border-line px-4">
+        <div className="mt-auto flex flex-wrap items-center justify-between gap-x-3 border-t border-line px-4">
           <Link to={target ? menuLink : tomorrowLink} className="inline-flex min-h-12 items-center gap-1 text-sm font-semibold text-brand-text hover:underline">
             {target ? (meal ? `Full ${meal.toLowerCase()} menu` : 'Menus') : 'Tomorrow’s menu'} <ChevronRight className="size-4" aria-hidden="true" />
           </Link>
-          <DirectionsLink hall={hallBySlug(hall.slug) ?? hall} />
+          <DirectionsLink hall={hallBySlug(hall.slug) ?? hall} className="-mr-2.5" />
         </div>
       </section>
     </MenuContext.Provider>

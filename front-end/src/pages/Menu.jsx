@@ -421,7 +421,7 @@ export default function Menu() {
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4">
         <p className="text-sm text-ink-muted">{statusLine}</p>
-        <DirectionsLink hall={hall} />
+        <DirectionsLink hall={hall} className="-mr-2.5" />
       </div>
 
       <SourceNotice result={result} />
