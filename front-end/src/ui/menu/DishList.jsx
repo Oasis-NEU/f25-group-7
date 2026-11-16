@@ -10,6 +10,7 @@ import { dietWords, sectionId } from './filters';
 import { hasRealDescription } from '../../data/curate';
 import { dishId } from '../../data/ranking';
 import { useMenuContext } from './menuContext';
+import { DishCommunity } from '../community/Notes';
 
 /*
  * The menu, built like a food app: a shelf of top picks you can swipe, each
@@ -50,7 +51,7 @@ export function ScoreBadge({ score, label, size = 'md' }) {
 const NewTag = () => <span className="ml-1.5 whitespace-nowrap align-[0.1em] text-xs font-semibold text-ink-subtle">New</span>;
 
 /** Join phrases with " · ", keeping each phrase ("760 cal", "24 g protein") on one line. */
-const joinFacts = parts => parts.filter(Boolean).map(p => p.replace(/ /g, '\u00a0')).join(' · ');
+const joinFacts = parts => parts.filter(Boolean).map(p => p.replace(/ /g, '\u00a0')).join('\u00a0· ');
 
 /** The second line under a dish name: station, diet words, protein. */
 function metaLine(item, { showStation = false } = {}) {
@@ -166,6 +167,8 @@ export function DishSheet({ item, open, onClose, periodSlug }) {
           {ctx.rank && ctx.hall && <Button block onClick={() => ctx.rank(dish)}>{yours ? 'Rank again' : 'Rank this dish'}</Button>}
           <AddToLog item={dish} periodSlug={periodSlug} />
         </div>
+
+        {id && <div className="border-t border-line pt-5"><DishCommunity dish={{ id, name: dish.name, hall: ctx.hall }} campus={campus} yours={yours} /></div>}
       </div>
     </Dialog>
   );

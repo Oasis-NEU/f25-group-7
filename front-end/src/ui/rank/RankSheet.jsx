@@ -7,6 +7,8 @@ import { useRanks } from '../../state/ranks';
 import { resendVerification } from '../../backend/account';
 import { stationLabel } from '../../data/curate';
 import { ScoreBadge } from '../menu/DishList';
+import { NoteComposer } from '../community/Notes';
+import { getMyNote } from '../../backend/notes';
 import { BUCKETS, answer, nextComparison, scoreAt, startPlacement } from '../../data/ranking';
 
 const RANGE_TONE = { loved: 'border-score-high text-score-high', fine: 'border-score-mid text-score-mid', disliked: 'border-score-low text-score-low' };
@@ -65,6 +67,15 @@ export function RankSheet({ dish: dishProp, open, onClose }) {
   }, [open, dish?.id]);
 
   const previous = dish ? details[dish.id]?.bucket ?? null : null;
+
+  // After ranking, offer a note; load the one you wrote before, if any.
+  const [myNote, setMyNote] = useState(null);
+  useEffect(() => {
+    if (step !== 'done' || !dish || !user) return undefined;
+    let alive = true;
+    getMyNote(dish.id, user.id).then(n => alive && setMyNote(n)).catch(() => {});
+    return () => { alive = false; };
+  }, [step, dish, user]);
 
   async function commit(chosenBucket, insertAt) {
     setSaving(true);
@@ -173,9 +184,12 @@ export function RankSheet({ dish: dishProp, open, onClose }) {
           <p className="mt-1 text-sm text-ink-muted tabular">
             #{result.index + 1} of {result.length} {result.length === 1 ? 'dish' : 'dishes'} you {result.bucket === 'loved' ? 'loved' : result.bucket === 'fine' ? 'found fine' : 'didn’t like'}
           </p>
-          <div className="mt-6 flex flex-wrap justify-center gap-2">
+          <div className="mt-6 text-left">
+            <NoteComposer dish={dish} bucket={result.bucket} initial={myNote} />
+          </div>
+          <div className="mt-5 flex flex-wrap justify-center gap-2">
             <Button onClick={onClose}>Done</Button>
-            <ButtonLink to="/rankings" variant="secondary" onClick={onClose}>See your list</ButtonLink>
+            <ButtonLink to="/rankings?tab=yours" variant="secondary" onClick={onClose}>Your list</ButtonLink>
           </div>
         </div>
       ) : (
@@ -184,7 +198,7 @@ export function RankSheet({ dish: dishProp, open, onClose }) {
       {saving && step !== 'done' && <p className="sr-only" role="status">Saving your ranking</p>}
       {step === 'bucket' && user && canPost && (
         <p className="mt-4 text-xs text-ink-muted">
-          Your list is private. Campus scores count each person once, and need three rankings before they show. <Link to="/rankings" className="underline">Your list</Link>
+          Each person counts once toward a dish’s campus score, which shows after three rankings. Notes you add are public. <Link to="/rankings" className="underline">Ratings</Link>
         </p>
       )}
     </Dialog>

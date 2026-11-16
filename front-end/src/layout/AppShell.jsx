@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { CalendarClock, ChevronDown, House, ListOrdered, LogIn, LogOut, Trophy, Activity } from 'lucide-react';
+import { CalendarClock, ChevronDown, House, LogIn, LogOut, Star, Trophy, Activity } from 'lucide-react';
 import { ThemeToggle } from '../ui/ThemeToggle';
 import { resendVerification } from '../backend/account';
 import { Logo } from '../ui/Logo';
@@ -11,7 +11,7 @@ import { OFFICIAL_SITE } from '../data/dineoncampus';
 const NAV = [
   { to: '/home', label: 'Today', icon: House, match: ['/home', '/menu'] },
   { to: '/hours', label: 'Hours', icon: CalendarClock, match: ['/hours'] },
-  { to: '/rankings', label: 'Your list', icon: ListOrdered, match: ['/rankings'] },
+  { to: '/rankings', label: 'Ratings', icon: Star, match: ['/rankings'] },
   { to: '/vote', label: 'Vote', icon: Trophy, match: ['/vote'] },
   { to: '/tracker', label: 'Tracker', icon: Activity, match: ['/tracker'] },
 ];
@@ -89,7 +89,7 @@ function AccountMenu() {
  * since rankings and votes need a verified account.
  */
 // Account pages show the full verify screen instead, so the banner steps aside there.
-const GATED = ['/rankings', '/vote', '/tracker'];
+const GATED = ['/rankings', '/tracker'];
 
 function VerifyBanner() {
   const { user, refresh } = useAuth();

@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Check, Circle, CircleDot, Clock, RefreshCw, X } from 'lucide-react';
-import { castVote, getMyMeals, getTotals, undoVote } from '../backend/votes';
+import { castVote, getMyMeals, getRecentVotes, getTotals, undoVote } from '../backend/votes';
+import { publicName } from '../backend/notes';
+import { ago } from '../lib/ago';
 import { campusDate, campusNow } from '../functions/campusTime';
 import { useAuth } from '../state/auth';
-import { Button } from '../ui/Button';
+import { Button, ButtonLink } from '../ui/Button';
 import { Card, Notice, PageHeader } from '../ui/primitives';
 import { PageSpinner } from '../ui/Spinner';
 import { usePageTitle } from '../lib/usePageTitle';
@@ -45,23 +47,27 @@ export const Vote = () => {
   const [status, setStatus] = useState('loading');
   const [failure, setFailure] = useState(null);
   const [toast, setToast] = useState(null);
+  const [recent, setRecent] = useState([]);
   const today = campusDate();
 
   // Slots the user is allowed to vote in right now
   const unvotedSlots = startedPeriods.filter(p => !votedPeriods.includes(p.name));
-  const canVote = status === 'ready' && unvotedSlots.length > 0;
+  const canVote = status === 'ready' && Boolean(user) && canPost && unvotedSlots.length > 0;
   const nextPeriod = getNextPeriod();
 
   // All-time cumulative totals, refetched on any Realtime event
   const fetchTotals = useCallback(async () => {
-    setVotes(await getTotals());
+    const [totals, latest] = await Promise.all([getTotals(), getRecentVotes(15).catch(() => null)]);
+    setVotes(totals);
+    if (latest) setRecent(latest);
   }, []);
 
   const load = useCallback(async () => {
     setStatus('loading');
     setFailure(null);
     try {
-      setVotedPeriods(await getMyMeals(user.id, today));
+      // Totals and the feed are public; your own meals only when signed in.
+      setVotedPeriods(user ? await getMyMeals(user.id, today) : []);
       await fetchTotals();
       setStatus('ready');
     } catch (err) {
@@ -71,7 +77,6 @@ export const Vote = () => {
   }, [user, today, fetchTotals]);
 
   useEffect(() => {
-    if (!user) return undefined;
     load();
 
     // Campus totals refresh every 30 seconds while the page is visible. Count
@@ -103,7 +108,8 @@ export const Vote = () => {
     setVotedPeriods(prev => [...prev, slotToMark.name]);
     setVotes(prev => ({ ...prev, [option]: prev[option] + 1 }));
 
-    const error = await castVote(user.id, today, slotToMark.name, option).then(() => null, err => err);
+    const error = await castVote(user.id, today, slotToMark.name, option, publicName(user.name, user.email)).then(() => null, err => err);
+    if (!error) setRecent(prev => [{ id: `${user.id}_${today}_${slotToMark.name}`, uid: user.id, name: publicName(user.name, user.email), meal: slotToMark.name, location: option, createdAt: Date.now() }, ...prev].slice(0, 15));
 
     if (error) {
       // Roll back: the database rejected it, most likely a duplicate from another tab
@@ -126,6 +132,7 @@ export const Vote = () => {
     setVotes(prev => ({ ...prev, [undone.option]: Math.max(0, prev[undone.option] - 1) }));
     setVotedPeriods(prev => prev.filter(p => p !== undone.slot));
     setToast(null);
+    setRecent(prev => prev.filter(v => v.id !== `${user.id}_${today}_${undone.slot}`));
 
     const error = await undoVote(user.id, today, undone.slot).then(() => null, err => err);
     if (error) {
@@ -135,6 +142,8 @@ export const Vote = () => {
   };
 
   const statusText = () => {
+    if (!user) return 'Anyone can follow the votes. Sign in with your Northeastern email to cast yours.';
+    if (!canPost) return 'Verify your Northeastern email to vote.';
     if (unvotedSlots.length > 0) {
       const names = unvotedSlots.map(p => p.label).join(' and ');
       return `You have ${unvotedSlots.length} vote${unvotedSlots.length > 1 ? 's' : ''} for ${names}.`;
@@ -150,7 +159,7 @@ export const Vote = () => {
   return (
     <div className="mx-auto max-w-3xl">
       <PageHeader title="Steast or IV?">
-        One vote per meal. Totals refresh every 30 seconds.
+        One vote per meal, public like the totals. They refresh every 30 seconds.
       </PageHeader>
 
       {status === 'error' && (
@@ -195,9 +204,9 @@ export const Vote = () => {
               <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-surface-2" aria-hidden="true">
                 <div className="h-full rounded-full bg-brand transition-[width] duration-500" style={{ width: `${share}%` }} />
               </div>
-              <Button className="mt-6" size="lg" block disabled={!canVote} onClick={() => handleVote(option.key)}>
-                Vote {option.short}
-              </Button>
+              {user
+                ? <Button className="mt-6" size="lg" block disabled={!canVote} onClick={() => handleVote(option.key)}>Vote {option.short}</Button>
+                : <ButtonLink className="mt-6" size="lg" block to="/login?next=/vote" variant="secondary">Sign in to vote</ButtonLink>}
             </Card>
           );
         })}
@@ -205,6 +214,30 @@ export const Vote = () => {
 
       <p className="mt-5 text-sm text-ink-muted" role="status">{status === 'ready' && statusText()}</p>
       {failure && <Notice tone="error" className="mt-4" role="alert" title={failure} />}
+
+      {recent.length > 0 && (
+        <section aria-labelledby="recent-votes" className="mt-10">
+          <h2 id="recent-votes" className="mb-2 px-1 text-lg font-semibold">Recent votes</h2>
+          <ul className="overflow-hidden rounded-card border border-card-line bg-surface shadow-card">
+            {recent.map(v => {
+              const place = OPTIONS.find(o => o.key === v.location);
+              const meal = MEAL_PERIODS.find(m => m.name === v.meal)?.label.toLowerCase() ?? v.meal;
+              const mine = user && v.uid === user.id;
+              return (
+                <li key={v.id} className="flex items-center gap-3 border-b border-line px-4 py-3 last:border-b-0">
+                  <span aria-hidden="true" className="grid size-9 shrink-0 place-items-center rounded-full bg-surface-3 text-sm font-semibold">
+                    {(mine ? 'You' : v.name || 'S').charAt(0).toUpperCase()}
+                  </span>
+                  <p className="min-w-0 flex-1 text-[0.9375rem]">
+                    <span className="font-semibold">{mine ? 'You' : v.name || 'A student'}</span> picked <span className="font-semibold">{place?.short ?? v.location}</span> for {meal}
+                  </p>
+                  <time className="shrink-0 text-[0.8125rem] text-ink-muted tabular" dateTime={new Date(v.createdAt).toISOString()}>{ago(v.createdAt)}</time>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
 
       <div aria-live="polite" className="pointer-events-none fixed inset-x-4 bottom-24 z-50 flex justify-center md:bottom-8">
         {toast && (

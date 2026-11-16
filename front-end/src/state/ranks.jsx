@@ -85,7 +85,7 @@ export function useRanks() {
  * per 30 dishes, cached for five minutes; an empty object until loaded or
  * when Firebase is unavailable.
  */
-export function useCampusScores(ids) {
+export function useCampusScores(ids, refresh = null) {
   const key = [...new Set(ids)].sort().join('|');
   const [scores, setScores] = useState({});
   const last = useRef('');
@@ -102,6 +102,7 @@ export function useCampusScores(ids) {
       })
       .catch(() => {});
     return () => { alive = false; };
-  }, [key]);
+    // `refresh` changes when your own rankings do, so a dish you just ranked re-reads its counts.
+  }, [key, refresh]);
   return scores;
 }

@@ -53,6 +53,12 @@ export async function saveRanking(uid, { dish, bucket, insertAt, previous, ranks
     const counters = { name: dish.name, hall: dish.hall, [bucket]: dbApi.increment(1) };
     if (previous) counters[previous] = dbApi.increment(-1);
     batch.set(dbApi.doc(store, 'dishes', dish.id), counters, { merge: true });
+    // A public note carries its ranking's label; move it in the same write.
+    if (previous) {
+      const noteRef = dbApi.doc(store, 'dishes', dish.id, 'notes', uid);
+      const note = await dbApi.getDoc(noteRef).catch(() => null);
+      if (note?.exists()) batch.set(noteRef, { bucket }, { merge: true });
+    }
   }
   await batch.commit();
   invalidate([dish.id]);
@@ -66,6 +72,8 @@ export async function removeRanking(uid, { dish, previous, ranks }) {
   batch.delete(dbApi.doc(store, 'users', uid, 'rankings', dish.id));
   batch.set(dbApi.doc(store, 'users', uid), { ranks: nextRanks }, { merge: true });
   batch.set(dbApi.doc(store, 'dishes', dish.id), { name: dish.name, hall: dish.hall, [previous]: dbApi.increment(-1) }, { merge: true });
+  // Removing a ranking takes its public note with it.
+  batch.delete(dbApi.doc(store, 'dishes', dish.id, 'notes', uid));
   await batch.commit();
   invalidate([dish.id]);
   return nextRanks;

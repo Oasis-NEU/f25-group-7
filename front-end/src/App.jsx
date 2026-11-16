@@ -47,8 +47,8 @@ export default function App() {
                   <Route path="/hours" element={<Hours />} />
                   {/* The hours page used to live at /about; keep old links working. */}
                   <Route path="/about" element={<Navigate to="/hours" replace />} />
-                  <Route path="/vote" element={<RequireAuth feature="Voting"><Vote /></RequireAuth>} />
-                  <Route path="/rankings" element={<RequireAuth feature="Your list"><Rankings /></RequireAuth>} />
+                  <Route path="/vote" element={<Vote />} />
+                  <Route path="/rankings" element={<Rankings />} />
                   <Route path="/tracker" element={<RequireAuth feature="The tracker"><Tracker /></RequireAuth>} />
                   <Route path="*" element={<NotFound />} />
                 </Route>

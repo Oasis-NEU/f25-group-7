@@ -26,9 +26,17 @@ export async function getMyMeals(uid, date) {
   return snap.docs.map(d => d.data().meal);
 }
 
-export async function castVote(uid, date, meal, location) {
+/** `name` is the public signature ("Alex R."): votes are public, like the totals. */
+export async function castVote(uid, date, meal, location, name = '') {
   const { db: store, dbApi } = await db();
-  await dbApi.setDoc(dbApi.doc(store, 'votes', `${uid}_${date}_${meal}`), { uid, date, meal, location, createdAt: Date.now() });
+  await dbApi.setDoc(dbApi.doc(store, 'votes', `${uid}_${date}_${meal}`), { uid, date, meal, location, name: String(name).slice(0, 40), createdAt: Date.now() });
+}
+
+/** The newest votes on campus, for the public feed. */
+export async function getRecentVotes(max = 15) {
+  const { db: store, dbApi } = await db();
+  const snap = await dbApi.getDocs(dbApi.query(dbApi.collection(store, 'votes'), dbApi.orderBy('createdAt', 'desc'), dbApi.limit(max)));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
 export async function undoVote(uid, date, meal) {

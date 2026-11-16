@@ -151,13 +151,13 @@ export default function Menu() {
 
   // Community: your scores, campus scores for every dish on this menu, and
   // the ranking sheet. Rows built from them only appear when there is data.
-  const { mine } = useRanks();
+  const { mine, ranks: myRanks } = useRanks();
   const allDishes = useMemo(
     () => curated.stations.flatMap(s => s.dishes.map(d => ({ ...d, stationLabel: s.label }))),
     [curated],
   );
   const scoreIds = useMemo(() => (hall ? allDishes.map(d => dishId(hall.slug, d.name)) : []), [allDishes, hall]);
-  const scores = useCampusScores(scoreIds);
+  const scores = useCampusScores(scoreIds, myRanks);
   const [ranking, setRanking] = useState(null);
   const openRank = useCallback(item => {
     if (!hall) return;

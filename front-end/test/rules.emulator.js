@@ -6,7 +6,7 @@ import { test, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { initializeTestEnvironment, assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, deleteDoc, writeBatch, increment, collection, query, where, getCountFromServer } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc, writeBatch, increment, collection, collectionGroup, query, where, orderBy, limit, getDocs, getCountFromServer } from 'firebase/firestore';
 
 let env;
 const DISH = 'stetson-east~huli-huli-chicken';
@@ -81,6 +81,23 @@ test('an unverified account cannot write goals or tracker logs', async () => {
   await assertFails(setDoc(doc(unverified(), 'users/bob/logs/l1'), { food_name: 'Bagel', logged_at: '2026-11-16' }));
   await assertSucceeds(setDoc(doc(husky(), 'users/alice'), { goals: { calories: 2000 } }, { merge: true }));
   await assertSucceeds(getDoc(doc(unverified(), 'users/bob')));
+});
+
+test('notes: public to read, written only by a verified ranker, labelled with their ranking', async () => {
+  const note = { uid: 'alice', name: 'Alice R.', bucket: 'loved', text: 'Crispy skin, great sauce.', dish: ranking.name, hall: ranking.hall, createdAt: 1, updatedAt: 1 };
+  const path = `dishes/${DISH}/notes/alice`;
+  await assertFails(setDoc(doc(husky(), path), note), 'needs a ranking first');
+  await assertSucceeds(rankBatch(husky()));
+  await assertSucceeds(setDoc(doc(husky(), path), note));
+  await assertFails(setDoc(doc(husky(), path), { ...note, bucket: 'disliked' }), 'label must match the ranking');
+  await assertFails(setDoc(doc(husky(), path), { ...note, text: 'x'.repeat(281) }), 'too long');
+  await assertFails(setDoc(doc(husky('mallory'), path), note), 'cannot write someone else’s note');
+  await assertFails(setDoc(doc(unverified(), `dishes/${DISH}/notes/bob`), { ...note, uid: 'bob' }), 'unverified cannot post');
+  await assertSucceeds(getDoc(doc(anonymous(), path)));
+  const feed = await getDocs(query(collectionGroup(anonymous(), 'notes'), orderBy('updatedAt', 'desc'), limit(10)));
+  assert.equal(feed.size, 1);
+  await assertFails(deleteDoc(doc(husky('mallory'), path)));
+  await assertSucceeds(deleteDoc(doc(husky(), path)));
 });
 
 test('your rankings, list and tracker logs are private', async () => {

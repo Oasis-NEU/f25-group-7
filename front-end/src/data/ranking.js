@@ -111,8 +111,9 @@ export function campusScore(stats) {
   const fine = stats?.fine ?? 0;
   const disliked = stats?.disliked ?? 0;
   const count = loved + fine + disliked;
-  if (count < CAMPUS_MIN) return { score: null, count };
+  const split = { loved, fine, disliked };
+  if (count < CAMPUS_MIN) return { score: null, count, ...split };
   const prior = 3;
   const sum = loved * 8.5 + fine * 5 + disliked * 1.5 + prior * 5;
-  return { score: Math.round((sum / (count + prior)) * 10) / 10, count };
+  return { score: Math.round((sum / (count + prior)) * 10) / 10, count, ...split };
 }
