@@ -13,7 +13,7 @@ export const HALLS = [
     locationName: 'The Eatery at Stetson East',
     dineId: '586d05e4ee596f6e6c04b527',
     match: /stetson\s*east/i,
-    mapQuery: 'Stetson East, Northeastern University, Boston, MA',
+    mapQuery: '7 Speare Pl, Boston, MA 02115',
     aliases: ['steast'],
     description: 'The largest hall on campus, open all day with the widest choice of stations.',
   },
