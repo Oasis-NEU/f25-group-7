@@ -84,7 +84,7 @@ test('an unverified account cannot write goals or tracker logs', async () => {
 });
 
 test('notes: public to read, written only by a verified ranker, labelled with their ranking', async () => {
-  const note = { uid: 'alice', name: 'Alice R.', bucket: 'loved', text: 'Crispy skin, great sauce.', dish: ranking.name, hall: ranking.hall, createdAt: 1, updatedAt: 1 };
+  const note = { uid: 'alice', bucket: 'loved', text: 'Crispy skin, great sauce.', dish: ranking.name, hall: ranking.hall, createdAt: 1, updatedAt: 1 };
   const path = `dishes/${DISH}/notes/alice`;
   await assertFails(setDoc(doc(husky(), path), note), 'needs a ranking first');
   await assertSucceeds(rankBatch(husky()));

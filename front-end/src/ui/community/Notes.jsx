@@ -1,5 +1,6 @@
 import { useEffect, useId, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { UserRound } from 'lucide-react';
 import { useAuth } from '../../state/auth';
 import { deleteNote, getDishNotes, getMyNote, NOTE_MAX, saveNote } from '../../backend/notes';
 import { hallBySlug } from '../../data/halls';
@@ -7,8 +8,8 @@ import { Button } from '../Button';
 import { ago } from '../../lib/ago';
 
 /*
- * The community log: what people said about a dish, signed with a first name
- * and last initial and labelled with how they ranked it. The label is always
+ * The community log: what people said about a dish, anonymously, labelled
+ * with how they ranked it. Your own notes show as "You". The label is always
  * a word; its colour only echoes the score tier.
  */
 
@@ -24,12 +25,12 @@ export function NoteItem({ note, showDish = false, mine = false }) {
   const hall = hallBySlug(note.hall);
   return (
     <li className="flex gap-3 border-b border-line px-4 py-3.5 last:border-b-0">
-      <span aria-hidden="true" className="grid size-9 shrink-0 place-items-center rounded-full bg-surface-3 text-sm font-semibold">
-        {(note.name || '?').charAt(0).toUpperCase()}
+      <span aria-hidden="true" className="grid size-9 shrink-0 place-items-center rounded-full bg-surface-3 text-ink-muted">
+        <UserRound className="size-4" />
       </span>
       <div className="min-w-0 flex-1">
         <p className="text-[0.8125rem] text-ink-muted">
-          <span className="font-semibold text-ink">{mine ? 'You' : note.name}</span>
+          <span className="font-semibold text-ink">{mine ? 'You' : 'A student'}</span>
           {' · '}<span className={`font-semibold ${b.tone}`}>{b.word}</span>
           {' · '}<time dateTime={new Date(note.updatedAt).toISOString()}>{ago(note.updatedAt)}</time>
         </p>
@@ -47,7 +48,7 @@ export function NoteItem({ note, showDish = false, mine = false }) {
 
 /**
  * Write or edit your note on a dish you ranked. `bucket` is your ranking of
- * it; the note is public and signed with your first name and last initial.
+ * it; the note is public but anonymous: no name is shown.
  */
 export function NoteComposer({ dish, bucket, initial = null, onChange, autoFocus = false }) {
   const { user } = useAuth();
@@ -100,7 +101,7 @@ export function NoteComposer({ dish, bucket, initial = null, onChange, autoFocus
         <span className={`ml-auto text-xs tabular ${left < 20 ? 'text-warn' : 'text-ink-subtle'}`}>{left}</span>
       </div>
       <p role="status" className="mt-1.5 text-xs text-ink-muted">
-        {error ? <span className="text-danger">{error}</span> : state === 'saved' ? 'Posted. Everyone can see it on this dish.' : 'Public, signed with your first name and last initial.'}
+        {error ? <span className="text-danger">{error}</span> : state === 'saved' ? 'Posted anonymously. Everyone can see it on this dish.' : 'Posted anonymously. Students see your ranking and note, never your name.'}
       </p>
     </div>
   );

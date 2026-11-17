@@ -26,10 +26,10 @@ export async function getMyMeals(uid, date) {
   return snap.docs.map(d => d.data().meal);
 }
 
-/** `name` is the public signature ("Alex R."): votes are public, like the totals. */
-export async function castVote(uid, date, meal, location, name = '') {
+/** Votes are anonymous: no name is stored, only the random account id that keeps one vote per meal. */
+export async function castVote(uid, date, meal, location) {
   const { db: store, dbApi } = await db();
-  await dbApi.setDoc(dbApi.doc(store, 'votes', `${uid}_${date}_${meal}`), { uid, date, meal, location, name: String(name).slice(0, 40), createdAt: Date.now() });
+  await dbApi.setDoc(dbApi.doc(store, 'votes', `${uid}_${date}_${meal}`), { uid, date, meal, location, createdAt: Date.now() });
 }
 
 /** The newest votes on campus, for the public feed. */
