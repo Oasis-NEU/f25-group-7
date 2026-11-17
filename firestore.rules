@@ -87,7 +87,7 @@ service cloud.firestore {
         && (resource == null || (request.resource.data.name == resource.data.name && request.resource.data.hall == resource.data.hall))
         && rankingChanged(dishId);
 
-      // Public notes: one per person per dish, from someone who has ranked it,
+      // Public, anonymous notes (no name stored): one per person per dish, from someone who has ranked it,
       // labelled with the bucket of that ranking (checked after the batch, so a
       // re-rank can move the note's label in the same write).
       match /notes/{uid} {
@@ -107,7 +107,7 @@ service cloud.firestore {
       return d.keys().hasOnly(['uid', 'name', 'bucket', 'text', 'dish', 'hall', 'createdAt', 'updatedAt'])
         && d.uid == uid
         && d.text is string && d.text.size() >= 1 && d.text.size() <= 280
-        && d.name is string && d.name.size() <= 40
+        && d.get('name', '') is string && d.get('name', '').size() <= 40
         && d.dish is string && d.dish.size() >= 1 && d.dish.size() <= 200
         && d.hall is string && d.hall.size() <= 64
         && d.createdAt is int && d.updatedAt is int

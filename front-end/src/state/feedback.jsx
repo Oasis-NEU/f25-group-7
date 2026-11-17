@@ -31,7 +31,8 @@ function FeedbackSheet({ request, onClose }) {
     if (message.trim().length < 3) { setError('Write a little more so we can act on it.'); return; }
     setState('sending'); setError('');
     try {
-      await sendFeedback({ kind, message, dish, user, email: user ? (contact ? user.email : '') : email });
+      // Your email and account go with the note only when you ask for a reply.
+      await sendFeedback({ kind, message, dish, user: user && contact ? user : null, email: user ? (contact ? user.email : '') : email });
       setState('sent');
     } catch (err) { setError(err.message); setState('idle'); }
   }
@@ -83,11 +84,14 @@ function FeedbackSheet({ request, onClose }) {
         {user ? (
           <label className="flex min-h-11 items-start gap-3 text-sm">
             <input type="checkbox" checked={contact} onChange={e => setContact(e.target.checked)} className="mt-0.5 size-5 shrink-0 accent-[var(--brand)]" />
-            <span>You can email me about this at <b className="font-semibold">{user.email}</b></span>
+            <span>
+              <span className="block font-semibold">Let the NU Dining team reply to me</span>
+              <span className="block text-ink-muted">Adds {user.email} to this note. Only the team sees it, never other students. Nothing is emailed to you now.</span>
+            </span>
           </label>
         ) : (
           <div>
-            <label htmlFor={emailId} className="text-sm font-semibold">Email <span className="font-normal text-ink-muted">(optional, if you’d like a reply)</span></label>
+            <label htmlFor={emailId} className="text-sm font-semibold">Email <span className="font-normal text-ink-muted">(optional, if you’d like a reply; only the team sees it)</span></label>
             <input
               id={emailId}
               type="email"
@@ -100,7 +104,7 @@ function FeedbackSheet({ request, onClose }) {
           </div>
         )}
 
-        <p className="text-xs text-ink-muted">Sends your note with the page you’re on, light or dark mode, screen width and browser, so we can reproduce problems. Nothing else.</p>
+        <p className="text-xs text-ink-muted">Feedback is private: only the NU Dining team reads it. It includes the page you’re on, light or dark mode, screen width and browser, so we can reproduce problems, plus your email only if you add it above.</p>
         {error && <p role="alert" className="text-sm font-medium text-danger">{error}</p>}
       </form>
     </Dialog>

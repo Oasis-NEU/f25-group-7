@@ -102,8 +102,11 @@ export default function Hours() {
               <h2 id={`hours-${hall.slug}`} className="text-lg font-semibold">
                 <Link to={`/menu/${hall.slug}`} className="hover:underline">{hall.name}</Link>
               </h2>
-              <StatusText status={describeStatus(hall.days, now)} className="text-sm" />
-              <DirectionsLink hall={hallBySlug(hall.slug) ?? hall} className="-ml-2.5 mt-1 flex" />
+              {/* Status on the left, Directions on the right, on one line. */}
+              <div className="flex items-center justify-between gap-4">
+                <StatusText status={describeStatus(hall.days, now)} className="text-sm" />
+                <DirectionsLink hall={hallBySlug(hall.slug) ?? hall} className="shrink-0" />
+              </div>
             </div>
             <dl className="border-t border-line text-sm tabular">
               {hall.days.map((day, i) => (

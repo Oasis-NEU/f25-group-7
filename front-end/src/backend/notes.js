@@ -1,7 +1,11 @@
 /**
  * Public dish notes on Firestore, the community log:
  *
- *   dishes/{dishId}/notes/{uid}  { uid, name, bucket, text, dish, hall, createdAt, updatedAt }
+ *   dishes/{dishId}/notes/{uid}  { uid, bucket, text, dish, hall, createdAt, updatedAt }
+ *
+ * Notes are anonymous: no name is stored. The uid (a random account id, not
+ * a name or email) lets you edit or delete your own and keeps one note per
+ * person per dish.
  *
  * One note per person per dish, written only by someone who has ranked the
  * dish, and labelled with that ranking's bucket. Anyone can read them; the
@@ -18,14 +22,6 @@ async function db() {
 }
 
 const fromSnap = d => ({ id: d.ref.path, dishId: d.ref.parent.parent?.id ?? null, ...d.data() });
-
-/** "Alex Rivera" -> "Alex R.": how a note is signed in public. */
-export function publicName(name, email) {
-  const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
-  if (parts.length >= 2) return `${parts[0]} ${parts[parts.length - 1][0].toUpperCase()}.`.slice(0, 40);
-  if (parts.length === 1) return parts[0].slice(0, 40);
-  return (String(email || '').split('@')[0] || 'Student').slice(0, 40);
-}
 
 /** The newest notes on one dish. */
 export async function getDishNotes(dishId, max = 20) {
@@ -59,7 +55,7 @@ export async function saveNote(user, dish, { text, bucket, createdAt = null }) {
   if (!clean) throw new Error('Write a few words first.');
   const now = Date.now();
   const note = {
-    uid: user.id, name: publicName(user.name, user.email), bucket, text: clean,
+    uid: user.id, bucket, text: clean,
     dish: dish.name, hall: dish.hall, createdAt: createdAt ?? now, updatedAt: now,
   };
   try {

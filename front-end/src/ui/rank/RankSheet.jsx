@@ -198,7 +198,7 @@ export function RankSheet({ dish: dishProp, open, onClose }) {
       {saving && step !== 'done' && <p className="sr-only" role="status">Saving your ranking</p>}
       {step === 'bucket' && user && canPost && (
         <p className="mt-4 text-xs text-ink-muted">
-          Each person counts once toward a dish’s campus score, which shows after three rankings. Notes you add are public. <Link to="/rankings" className="underline">Ratings</Link>
+          Each person counts once toward a dish’s campus score, which shows after three rankings. Notes are anonymous. <Link to="/rankings" className="underline">Ratings</Link>
         </p>
       )}
     </Dialog>

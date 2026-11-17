@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Check, Circle, CircleDot, Clock, RefreshCw, X } from 'lucide-react';
+import { Check, Circle, CircleDot, Clock, RefreshCw, X, UserRound } from 'lucide-react';
 import { castVote, getMyMeals, getRecentVotes, getTotals, undoVote } from '../backend/votes';
-import { publicName } from '../backend/notes';
 import { ago } from '../lib/ago';
 import { campusDate, campusNow } from '../functions/campusTime';
 import { useAuth } from '../state/auth';
@@ -114,8 +113,8 @@ export const Vote = () => {
     setVotedPeriods(prev => [...prev, slotToMark.name]);
     setVotes(prev => ({ ...prev, [option]: prev[option] + 1 }));
 
-    const error = await castVote(user.id, today, slotToMark.name, option, publicName(user.name, user.email)).then(() => null, err => err);
-    if (!error) setRecent(prev => [{ id: `${user.id}_${today}_${slotToMark.name}`, uid: user.id, name: publicName(user.name, user.email), meal: slotToMark.name, location: option, createdAt: Date.now() }, ...prev].slice(0, 15));
+    const error = await castVote(user.id, today, slotToMark.name, option).then(() => null, err => err);
+    if (!error) setRecent(prev => [{ id: `${user.id}_${today}_${slotToMark.name}`, uid: user.id, meal: slotToMark.name, location: option, createdAt: Date.now() }, ...prev].slice(0, 15));
 
     if (error) {
       // Roll back: the database rejected it, most likely a duplicate from another tab
@@ -165,7 +164,7 @@ export const Vote = () => {
   return (
     <div className="mx-auto max-w-3xl">
       <PageHeader title="Steast or IV?">
-        One vote per meal, public like the totals. They refresh every 30 seconds.
+        One vote per meal, anonymous. Totals refresh every 30 seconds.
       </PageHeader>
 
       {status === 'error' && (
@@ -231,11 +230,11 @@ export const Vote = () => {
               const mine = user && v.uid === user.id;
               return (
                 <li key={v.id} className="flex items-center gap-3 border-b border-line px-4 py-3 last:border-b-0">
-                  <span aria-hidden="true" className="grid size-9 shrink-0 place-items-center rounded-full bg-surface-3 text-sm font-semibold">
-                    {(mine ? 'You' : v.name || 'S').charAt(0).toUpperCase()}
+                  <span aria-hidden="true" className="grid size-9 shrink-0 place-items-center rounded-full bg-surface-3 text-ink-muted">
+                    <UserRound className="size-4" />
                   </span>
                   <p className="min-w-0 flex-1 text-[0.9375rem]">
-                    <span className="font-semibold">{mine ? 'You' : v.name || 'A student'}</span> picked <span className="font-semibold">{place?.short ?? v.location}</span> for {meal}
+                    <span className="font-semibold">{mine ? 'You' : 'A student'}</span> picked <span className="font-semibold">{place?.short ?? v.location}</span> for {meal}
                   </p>
                   <time className="shrink-0 text-[0.8125rem] text-ink-muted tabular" dateTime={new Date(v.createdAt).toISOString()}>{ago(v.createdAt)}</time>
                 </li>
